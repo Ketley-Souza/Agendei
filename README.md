@@ -14,3 +14,4 @@ O projeto está em fase inicial e será desenvolvido como parte da disciplina **
 - Git / GitHub (Controle de versão)
 
 ## ⚙️ Como Executar
+https://archive.org/details/sistemas-de-banco-de-dados-ramez-elmasri-shamkant-b.-navathe-z-lib.org/page/65/mode/2up?view=theater
