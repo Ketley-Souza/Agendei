@@ -9,8 +9,12 @@
     "@testing-library/user-event": "^13.5.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.4",
     "react-scripts": "5.0.1",
+    "redux": "^5.0.1",
+    "redux-devtools-extension": "^2.13.9",
+    "redux-saga": "^1.4.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

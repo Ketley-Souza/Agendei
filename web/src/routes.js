@@ -1,5 +1,12 @@
+import Sidebar from './components/Sidebar';
+
+
 const Routes = () => {
-    return (<h1>Teste</h1>);
+  return (
+    <>
+      <Sidebar />
+    </>
+  );
 };
 
 export default Routes;
