@@ -1,0 +1,15 @@
+#root {
+    height: 100%;
+    width: 100%;
+    position: fixed;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    list-style: none;      /* remove marcadores de lista */
+    text-decoration: none;  /* remove sublinhado de links */ /* fonte base */
+    border: none;           /* remove bordas de inputs e buttons */
+    outline: none;          /* remove outline de inputs e buttons */
+    background: none;       /* remove background padrão */
+}
