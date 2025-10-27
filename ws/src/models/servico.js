@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const servico = new Schema({
-  salaoId : {
+  salaoId: {
     type: mongoose.Types.ObjectId,
     ref: 'Salao',
     required: true,
@@ -23,17 +23,21 @@ const servico = new Schema({
     type: String,
     required: true,
   },
-  status : {
-       type: String,
-       required: true,
-       enum: ['Disponível', 'Indisponível', 'Excluído'],
-       default: 'Disponível'
+  imagem: {
+    type: String, // Caminho relativo da imagem salva no servidor
+    default: null,
   },
-  dataCadastro : {
-       type: Date,
-       default: Date.now,
+  status: {
+    type: String,
+    required: true,
+    enum: ['Disponivel', 'Indisponivel', 'Excluido'],
+    default: 'Disponivel'
   },
-  
+  dataCadastro: {
+    type: Date,
+    default: Date.now,
+  },
+
 });
 
 module.exports = mongoose.model('Servico', servico);

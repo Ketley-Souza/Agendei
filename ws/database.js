@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
-const URI = '';
 
-mongoose.set('useNewUrlParser', true);
-mongoose.set('useUnifiedTopology', true);
-mongoose.set('useCreatIndex', true);
-mongoose.set('useFindAndModify', false);
+const URI = 'mongodb+srv://ketley_db:btLyk0sdjmjSjpwy@agendei-db.rha1m75.mongodb.net/nosso_espaco?appName=Agendei-db';
+
 
 mongoose.connect(URI)
-.then(() => console.log('DB conectado.'))
-.catch(() => console.log(err));
+    .then(() => console.log('Banco de dados conectado!'))
+    .catch((err) => console.error('Erro ao conectar ao banco:', err));
+
+module.exports = mongoose;

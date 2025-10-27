@@ -2,37 +2,47 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const agendamento = new Schema({
-  salaoId : {
-        type: mongoose.Types.ObjectId,
-        ref: 'Salao',
-        required: true,
-      },
-  clienteId : {
-        type: mongoose.Types.ObjectId,
-        ref: 'Cliente',
-        required: true,
-      },
-  servicoId : {
-        type: mongoose.Types.ObjectId,
-        ref: 'Servico',
-        required: true,
-      },
-  colaboradorId : {
-        type: mongoose.Types.ObjectId,
-        ref: 'Colaborador',
-        required: true,
-      },
-  data : {
-    type : Date,
-    required : true
+  salaoId: {
+    type: mongoose.Types.ObjectId,
+    ref: 'Salao',
+    required: true,
   },
-  preco : {
-    type : Number,
-    required : true
+  clienteId: {
+    type: mongoose.Types.ObjectId,
+    ref: 'Cliente',
+    required: true,
   },
-  dataCadastro : {
-       type: Date,
-       default: Date.now,
+  servicoId: {
+    type: mongoose.Types.ObjectId,
+    ref: 'Servico',
+    required: true,
+  },
+  colaboradorId: {
+    type: mongoose.Types.ObjectId,
+    ref: 'Colaborador',
+    required: true,
+  },
+  data: {
+    type: Date,
+    required: true
+  },
+  preco: {
+    type: Number,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['A', 'I'],
+    required: true,
+    default: 'A',
+  },
+  transactionId: {
+    type: String,
+    required: true,
+  },
+  dataCadastro: {
+    type: Date,
+    default: Date.now,
   },
 });
 
