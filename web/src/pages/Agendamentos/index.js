@@ -71,12 +71,12 @@ const localizer = momentLocalizer(moment);
               const servico =
                 event.resource.agendamento.servicoId.titulo.toLowerCase();
               let color = "";
-
+//teste
               if (servico.includes("unha")) color = "#007bff"; // azul
               else if (servico.includes("cabelo")) color = "#ff9900"; // laranja
               else if (servico.includes("spa")) color = "#ff0000"; // vermelho
               else color = "#555";
-
+//--------------------------------------------------------------------------------
               return {
                 style: {
                   backgroundColor: "transparent",
