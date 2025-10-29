@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Horario = require('../models/horario');
 const Especialidade = require('../models/relations/especialidade');
-const moment = require('moment');
-var _ = require('lodash');
 
 router.post('/', async (req, res) => {
     try {
@@ -55,9 +53,15 @@ router.post('/colaboradores', async (req, res) => {
             .populate('colaboradorId', 'nome')
             .select('colaboradorId -_id');
 
-        const listaColaboradores = _.uniqBy(colaboradores, (c) =>
-            c.colaboradorId._id.toString()
-        ).map((c) => ({ label: c.colaboradorId.nome, value: c.colaboradorId._id }));
+        const listaColaboradores = Array.from(
+            new Map(
+                colaboradores.map((c) => [c.colaboradorId._id.toString(), c])
+            ).values()
+        ).map((c) => ({
+            label: c.colaboradorId.nome,
+            value: c.colaboradorId._id,
+        }));
+
 
         res.json({ error: false, colaboradores: listaColaboradores });
     } catch (err) {
