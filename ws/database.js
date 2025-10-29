@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const URI = 'mongodb+srv://ketley_db:btLyk0sdjmjSjpwy@agendei-db.rha1m75.mongodb.net/nosso_espaco?appName=Agendei-db';
+const URI = 'mongodb+srv://ketley_db:ZCsHSrkZNZtNM3hJ@agendei-db.rha1m75.mongodb.net/nosso_espaco?appName=Agendei-db';
 
 
 mongoose.connect(URI)
