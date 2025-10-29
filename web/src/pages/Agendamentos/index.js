@@ -1,54 +1,64 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { filterAgendamentos } from "./actions";
-import { Calendar, momentLocalizer } from "react-big-calendar";
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-//erro import 'react-big-calendar/dist/react-big-calendar.css';
+import { filterAgendamentos } from "../../store/slices/agendamentoSlice";
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import { format, parse, startOfWeek, getDay, addMinutes } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-import moment from "moment";
+const locales = {
+  "pt-BR": ptBR,
+};
 
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
 
-
-const localizer = momentLocalizer(moment);
-
-  const Agendamentos = () => {
+const Agendamentos = () => {
   const dispatch = useDispatch();
   const { agendamentos } = useSelector((state) => state.agendamento);
 
-  const formatEventos = () => {
-    return agendamentos.map((agendamento) => ({
-      resource: { agendamento },
-      title: `${agendamento.servicoId.titulo} - ${agendamento.clienteId.nome}`,
-      start: moment(agendamento.data).toDate(),
-      end: moment(agendamento.data)
-        .add(agendamento.servicoId.duracao, "minutes")
-        .toDate(),
-    }));
-  };
+  const formatEventos = () =>
+    agendamentos.map((agendamento) => {
+      const inicio = new Date(agendamento.data);
+      const duracao = agendamento.servicoId?.duracao || 0;
+      const fim = addMinutes(inicio, duracao);
+
+      return {
+        resource: { agendamento },
+        title: `${agendamento.servicoId?.titulo || ""} - ${agendamento.clienteId?.nome || ""
+          }`,
+        start: inicio,
+        end: fim,
+      };
+    });
 
   useEffect(() => {
-    dispatch(
-      filterAgendamentos({
-        start: moment().weekday(0).format("YYYY-MM-DD"),
-        end: moment().weekday(6).format("YYYY-MM-DD"),
-      })
+    const today = new Date();
+    const start = format(startOfWeek(today, { weekStartsOn: 0 }), "yyyy-MM-dd");
+    const end = format(
+      new Date(today.getFullYear(), today.getMonth(), today.getDate() + 6),
+      "yyyy-MM-dd"
     );
+
+    dispatch(filterAgendamentos({ start, end }));
   }, [dispatch]);
 
   const formatRange = (range) => {
-    let finalRange = {};
     if (Array.isArray(range)) {
-      finalRange = {
-        start: moment(range[0]).format("YYYY-MM-DD"),
-        end: moment(range[range.length - 1]).format("YYYY-MM-DD"),
-      };
-    } else {
-      finalRange = {
-        start: moment(range.start).format("YYYY-MM-DD"),
-        end: moment(range.end).format("YYYY-MM-DD"),
+      return {
+        start: format(range[0], "yyyy-MM-dd"),
+        end: format(range[range.length - 1], "yyyy-MM-dd"),
       };
     }
-    return finalRange;
+    return {
+      start: format(range.start, "yyyy-MM-dd"),
+      end: format(range.end, "yyyy-MM-dd"),
+    };
   };
 
   return (
@@ -58,34 +68,14 @@ const localizer = momentLocalizer(moment);
           <h2 className="mb-4 mt-0">Agendamentos</h2>
           <Calendar
             localizer={localizer}
+            events={formatEventos()}
             onRangeChange={(range) =>
               dispatch(filterAgendamentos(formatRange(range)))
             }
-            onSelectEvent={() => {}}
-            events={formatEventos()}
-            defaultView="month"
-            selectable={true}
-            popup={true}
+            defaultView="week"
+            selectable
+            popup
             style={{ height: "calc(100vh - 120px)" }}
-            eventPropGetter={(event) => {
-              const servico =
-                event.resource.agendamento.servicoId.titulo.toLowerCase();
-              let color = "";
-//teste
-              if (servico.includes("unha")) color = "#007bff"; // azul
-              else if (servico.includes("cabelo")) color = "#ff9900"; // laranja
-              else if (servico.includes("spa")) color = "#ff0000"; // vermelho
-              else color = "#555";
-//--------------------------------------------------------------------------------
-              return {
-                style: {
-                  backgroundColor: "transparent",
-                  color,
-                  fontWeight: "bold",
-                  border: "none",
-                },
-              };
-            }}
           />
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../services/api';
+import api from '../../services/api'; // agora é Axios
 import toast from 'react-hot-toast';
 import consts from '../../consts';
 
@@ -27,7 +27,6 @@ const INITIAL_STATE = {
 };
 
 // --- Thunks assíncronos ---
-
 export const filterCliente = createAsyncThunk(
     'cliente/filterCliente',
     async (filters, { getState, dispatch }) => {
@@ -35,19 +34,19 @@ export const filterCliente = createAsyncThunk(
         dispatch(updateCliente({ form: { ...form, filtering: true } }));
 
         try {
-            const { data: res } = await api.post('/cliente/filter', filters);
+            const res = await api.post('/cliente/filter', filters);
 
             dispatch(updateCliente({ form: { ...form, filtering: false } }));
 
-            if (res.error) {
-                toast.error(res.message);
+            if (res.data.error) {
+                toast.error(res.data.message);
                 return;
             }
 
-            if (res.clientes.length > 0) {
+            if (res.data.clientes.length > 0) {
                 dispatch(
                     updateCliente({
-                        cliente: res.clientes[0],
+                        cliente: res.data.clientes[0],
                         form: { ...form, filtering: false, disabled: true },
                     })
                 );
@@ -57,13 +56,14 @@ export const filterCliente = createAsyncThunk(
                 );
             }
 
-            return res.clientes;
+            return res.data.clientes;
         } catch (err) {
             dispatch(updateCliente({ form: { ...form, filtering: false } }));
             toast.error(err.message);
         }
     }
 );
+
 
 export const addCliente = createAsyncThunk(
     'cliente/addCliente',
@@ -72,17 +72,19 @@ export const addCliente = createAsyncThunk(
         dispatch(updateCliente({ form: { ...form, saving: true } }));
 
         try {
-            const { data: res } = await api.post('/cliente', {
+            const res = await api.post('/cliente', {
                 cliente,
                 salaoId: consts.salaoId,
             });
+
             dispatch(updateCliente({ form: { ...form, saving: false } }));
 
-            if (res.error) {
-                toast.error(res.message);
+            if (res.data.error) {
+                toast.error(res.data.message);
                 return;
             }
 
+            //  Aqui muda: recarrega todos os clientes direto do servidor
             dispatch(allClientes());
             dispatch(updateCliente({ components: { ...components, drawer: false } }));
             dispatch(resetCliente());
@@ -95,6 +97,9 @@ export const addCliente = createAsyncThunk(
     }
 );
 
+
+
+
 export const allClientes = createAsyncThunk(
     'cliente/allClientes',
     async (_, { getState, dispatch }) => {
@@ -102,15 +107,15 @@ export const allClientes = createAsyncThunk(
         dispatch(updateCliente({ form: { ...form, filtering: true } }));
 
         try {
-            const { data: res } = await api.get(`/cliente/salao/${consts.salaoId}`);
+            const res = await api.get(`/cliente/salao/${consts.salaoId}`);
             dispatch(updateCliente({ form: { ...form, filtering: false } }));
 
-            if (res.error) {
-                toast.error(res.message);
+            if (res.data.error) {
+                toast.error(res.data.message);
                 return;
             }
 
-            dispatch(updateCliente({ clientes: res.clientes }));
+            dispatch(updateCliente({ clientes: res.data.clientes }));
         } catch (err) {
             dispatch(updateCliente({ form: { ...form, filtering: false } }));
             toast.error(err.message);
@@ -125,11 +130,11 @@ export const unlinkCliente = createAsyncThunk(
         dispatch(updateCliente({ form: { ...form, saving: true } }));
 
         try {
-            const { data: res } = await api.delete(`/cliente/vinculo/${cliente.vinculoId}`);
+            const res = await api.delete(`/cliente/vinculo/${cliente.vinculoId}`);
             dispatch(updateCliente({ form: { ...form, saving: false } }));
 
-            if (res.error) {
-                toast.error(res.message);
+            if (res.data.error) {
+                toast.error(res.data.message);
                 return;
             }
 
@@ -153,14 +158,16 @@ const clienteSlice = createSlice({
     initialState: INITIAL_STATE,
     reducers: {
         updateCliente: (state, action) => {
+            //  Forma segura e compatível com Redux Toolkit
             Object.assign(state, action.payload);
         },
         resetCliente: (state) => {
-            state.cliente = INITIAL_STATE.cliente;
+            //  Mantém a estrutura e limpa só o cliente
+            state.cliente = { ...INITIAL_STATE.cliente };
         },
     },
 });
 
-export const { updateCliente, resetCliente } = clienteSlice.actions;
 
+export const { updateCliente, resetCliente } = clienteSlice.actions;
 export default clienteSlice.reducer;

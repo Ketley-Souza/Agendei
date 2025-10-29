@@ -15,8 +15,8 @@ import {
     Button,
     Message,
     Tag,
-    Notification,
 } from 'rsuite';
+import { toast, Toaster } from 'react-hot-toast';
 
 const Clientes = () => {
     const dispatch = useDispatch();
@@ -62,11 +62,7 @@ const Clientes = () => {
                 'senha',
             ])
         ) {
-            Notification.warning({
-                title: 'Campos obrigatórios',
-                description: 'Preencha todos os campos antes de salvar!',
-                type: 'warning',
-            });
+            toast.error('Preencha todos os campos obrigatórios antes de salvar!');
             return;
         }
 
@@ -96,9 +92,11 @@ const Clientes = () => {
 
     return (
         <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
+            <Toaster position="top-right" />
+
             {/* Cabeçalho */}
             <div className="flex justify-between items-center mb-10">
-                <h2 className="text-2xl font-semibold">Clientes</h2>
+                <h2 className="font-mono text-2xl font-semibold">Clientes</h2>
                 <button
                     onClick={() => {
                         dispatch(resetCliente());
@@ -113,7 +111,8 @@ const Clientes = () => {
 
             {/* Tabela */}
             <TableComponent
-                rows={clientes}
+                data={clientes || []} 
+                rows={clientes || []}
                 loading={form.filtering}
                 config={[
                     { label: 'Nome', key: 'nome' },
@@ -126,10 +125,7 @@ const Clientes = () => {
                     {
                         label: 'Sexo',
                         key: 'sexo',
-                        content: (sexo) => (
-                            <Tag color="gray">{sexo}</Tag>
-                            //<Tag color={sexo === 'Masculino' ? 'blue' : 'violet'}>{sexo}</Tag>
-                        ),
+                        content: (sexo) => <Tag color="gray">{sexo}</Tag>,
                     },
                     { label: 'Data de Cadastro', key: 'dataCadastro' },
                 ]}

@@ -28,14 +28,14 @@ const colaborador = new Schema({
       required: true
    },
    dataNascimento: {
-      type: String,
+      type: Date,
       required: true
    },
    status: {
       type: String,
       required: true,
-      enum: ['Disponível', 'Indisponível'],
-      default: 'Disponível'
+      enum: ['Disponivel', 'Indisponivel'],
+      default: 'Disponivel'
    },
    dataCadastro: {
       type: Date,

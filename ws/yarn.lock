@@ -172,6 +172,7 @@ __metadata:
   resolution: "back_end@workspace:."
   dependencies:
     cors: "npm:^2.8.5"
+    date-fns: "npm:^4.1.0"
     express: "npm:^5.1.0"
     mongoose: "npm:^8.19.2"
     morgan: "npm:^1.10.1"
@@ -427,6 +428,13 @@ __metadata:
     shebang-command: "npm:^2.0.0"
     which: "npm:^2.0.1"
   checksum: 10c0/053ea8b2135caff68a9e81470e845613e374e7309a47731e81639de3eaeb90c3d01af0e0b44d2ab9d50b43467223b88567dfeb3262db942dc063b9976718ffc1
+  languageName: node
+  linkType: hard
+
+"date-fns@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "date-fns@npm:4.1.0"
+  checksum: 10c0/b79ff32830e6b7faa009590af6ae0fb8c3fd9ffad46d930548fbb5acf473773b4712ae887e156ba91a7b3dc30591ce0f517d69fd83bd9c38650fdc03b4e0bac8
   languageName: node
   linkType: hard
 
