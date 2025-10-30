@@ -1,0 +1,175 @@
+/* ===================== */
+/* ESTILOS GERAIS */
+/* ===================== */
+
+.titulo-agendamentos {
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: #2c2c2c;
+}
+
+/* Cabeçalho principal */
+.header-agendamentos {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ===================== */
+/* LOGO PLACEHOLDER */
+/* ===================== */
+
+.logo-placeholder {
+  width: 70px;
+  height: 70px;
+  border: 2px dashed #b38b00; /* dourado */
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b38b00;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  background-color: transparent;
+}
+
+/* ===================== */
+/* BOTÃO ADICIONAR */
+/* ===================== */
+
+.btn-add-agendamento {
+  background-color: #b38b00; /* dourado */
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-agendamento:hover {
+  background-color: #a07b00;
+  transform: scale(1.02);
+}
+
+/* ===================== */
+/* CALENDÁRIO */
+/* ===================== */
+
+.calendar-container {
+  border-radius: 12px;
+  background-color: #fff;
+  box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+}
+
+/* Toolbar (botões Hoje / Voltar / Próximo) */
+.rbc-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.rbc-toolbar-label {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #333;
+}
+
+.rbc-btn-group > button {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #333;
+  transition: 0.2s;
+  font-weight: 500;
+}
+
+.rbc-btn-group > button:hover,
+.rbc-btn-group > button:focus {
+  background-color: #b38b00;
+  color: white;
+  border-color: #b38b00;
+}
+
+/* Cabeçalho dos dias */
+.rbc-header {
+  background-color: #fafafa;
+  font-weight: 600;
+  color: #555;
+  border-bottom: 1px solid #eee;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 6px 0;
+}
+
+/* Células dos dias */
+.rbc-date-cell {
+  text-align: right;
+  padding: 4px 8px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.rbc-month-row + .rbc-month-row {
+  border-top: 1px solid #eee;
+}
+
+.rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid #eee;
+}
+
+/* Eventos */
+.rbc-event {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  color: #000 !important;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.evento {
+  display: block;
+  margin: 2px 0;
+}
+
+/* === Cores por tipo === */
+.evento-unha {
+  color: #007bff !important; /* azul */
+}
+
+.evento-cabelo {
+  color: #ff9800 !important; /* laranja */
+}
+
+.evento-progressiva {
+  color: #4caf50 !important; /* verde */
+}
+
+.evento-spa {
+  color: #e91e63 !important; /* rosa */
+}
+
+.evento-outro {
+  color: #9c27b0 !important; /* roxo */
+}
+
+/* Dia atual */
+.rbc-today {
+  background-color: #fff8e1 !important;
+  border: 1px solid #ffe082;
+}
+
+/* Dias fora do mês */
+.rbc-off-range-bg {
+  background-color: #f9f9f9;
+  color: #ccc;
+}
