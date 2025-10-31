@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { filterAgendamentos } from "../../store/slices/agendamentoSlice";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
-import "react-big-calendar/lib/css/react-big-calendar.css";
 import { format, parse, startOfWeek, getDay, addMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useNavigate } from "react-router-dom";
-import "./Agendamentos.css";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+
+
+
 
 const locales = {
   "pt-BR": ptBR,
@@ -22,9 +24,8 @@ const localizer = dateFnsLocalizer({
 
 const Agendamentos = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { agendamentos } = useSelector((state) => state.agendamento);
-
+  const [view, setView] = useState("month");
   // === Formata os eventos ===
   const formatEventos = () =>
     agendamentos.map((agendamento) => {
@@ -34,12 +35,9 @@ const Agendamentos = () => {
 
       return {
         resource: { agendamento },
-        title: `${agendamento.clienteId?.nome || ""} - ${
-          agendamento.servicoId?.titulo || ""
-        }`,
+        title: `${agendamento.servicoId.titulo} - ${agendamento.clienteId.nome} - ${agendamento.colaboradorId.nome}`,
         start: inicio,
         end: fim,
-        type: agendamento.servicoId?.titulo?.toLowerCase() || "outro",
       };
     });
 
@@ -69,62 +67,102 @@ const Agendamentos = () => {
   };
 
   // === Renderiza cada evento ===
-  const renderEvento = ({ event }) => (
-    <span className={`evento evento-${event.type}`}>{event.title}</span>
+  const renderEvento = ({ event }) => <span>{event.title}</span>;
+
+
+
+  const CustomToolbar = ({ label, onNavigate, onView, view }) => (
+    <div className="relative flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 rounded-t-lg shadow-sm">
+
+      {/* Navegação (voltar / próximo) */}
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => onNavigate("PREV")}
+          className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition"
+          title="Anterior"
+        >
+          <CaretLeftIcon size={22} weight="bold" className="text-gray-700" />
+        </button>
+        <button
+          onClick={() => onNavigate("NEXT")}
+          className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition"
+          title="Próximo"
+        >
+          <CaretRightIcon size={22} weight="bold" className="text-gray-700" />
+        </button>
+      </div>
+
+      {/* Título centralizado */}
+      <h2 className="absolute left-1/2 transform -translate-x-1/2 text-base font-medium text-gray-800 select-none">
+        {label}
+      </h2>
+
+      {/* Tipos de visualização */}
+      <div className="flex space-x-2">
+        {["month", "week", "day", "agenda"].map((mode) => (
+          <button
+            key={mode}
+            onClick={() => onView(mode)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition ${view === mode
+              ? "bg-yellow-600/70 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+          >
+            {mode === "month" ? "Mês" : mode === "week" ? "Semana" : mode === "day" ? "Dia" : "Agenda"}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 
   return (
-    <div className="col p-5 overflow-auto h-100">
-      {/* ================== CABEÇALHO SUPERIOR ================== */}
-      <div className="header-agendamentos d-flex justify-content-between align-items-center mb-4">
-        <h2 className="titulo-agendamentos">Agendamentos</h2>
-
-        <div className="d-flex align-items-center gap-3">
-          {/* Espaço reservado para LOGO */}
-          <div className="logo-placeholder">
-            <span>LOGO</span>
-          </div>
-
-          {/* Botão ADICIONAR */}
-          <button
-            className="btn-add-agendamento"
-            onClick={() => navigate("/agendamentos/novo")}
-          >
-            ADICIONAR
-          </button>
-        </div>
+    <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
+      {/* ===== Cabeçalho ===== */}
+      <div className="flex justify-center items-center mb-6">
+        <h2 className="text-xl fint-sans font-semibold text-[#2c2c2c]">
+          Agendamentos
+        </h2>
       </div>
 
-      {/* ================== CALENDÁRIO ================== */}
-      <div className="calendar-container bg-white rounded shadow-sm border">
+      {/* ===== Calendário ===== */}
+      <div className="overflow-hidden">
         <Calendar
           localizer={localizer}
           events={formatEventos()}
+          view={view}
+          onView={(newView) => setView(newView)}
           onRangeChange={(range) =>
             dispatch(filterAgendamentos(formatRange(range)))
           }
-          defaultView="month"
-          views={["month"]}
           components={{
+            toolbar: CustomToolbar,
             event: renderEvento,
           }}
-          style={{ height: "calc(100vh - 220px)" }}
+          popup
+          selectable
+          style={{ minHeight: "600px", height: "calc(100vh - 220px)" }}
           messages={{
             allDay: "Dia inteiro",
-            previous: "Voltar",
-            next: "Próximo",
-            today: "Hoje",
-            month: "Mês",
-            week: "Semana",
-            day: "Dia",
-            agenda: "Agenda",
             date: "Data",
             time: "Hora",
             event: "Evento",
             showMore: (total) => `+${total} mais`,
           }}
+          formats={{
+            dayFormat: (date, culture, localizer) =>
+              localizer.format(date, "EEE dd/MM", culture),
+            timeGutterFormat: "HH:mm",
+          }}
+          culture="pt-BR"
         />
       </div>
+
+      {/* ==== ESTILIZAÇÃO DO DIA ATUAL ==== */}
+      <style>{`
+        .rbc-today {
+          background-color: rgba(35, 34, 31, 0.21); /* Amarelo suave */
+        }
+      `}</style>
     </div>
   );
 };

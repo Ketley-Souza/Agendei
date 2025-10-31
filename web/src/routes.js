@@ -4,7 +4,6 @@ import './styles.css';
 import Sidebar from './components/Sidebar';
 
 import Agendamentos from './pages/Agendamentos';
-import NovoAgendamento from './pages/Agendamentos/NovoAgendamento'; // 👈 novo import
 import Clientes from './pages/Clientes';
 import Colaboradores from './pages/Colaboradores';
 import Servicos from './pages/Servicos';
@@ -28,7 +27,6 @@ const SiteRoutes = () => {
 
                                     {/* Páginas principais */}
                                     <Route path="/agendamentos" element={<Agendamentos />} />
-                                    <Route path="/agendamentos/novo" element={<NovoAgendamento />} /> {/* 👈 nova rota */}
                                     <Route path="/clientes" element={<Clientes />} />
                                     <Route path="/colaboradores" element={<Colaboradores />} />
                                     <Route path="/servicos" element={<Servicos />} />
