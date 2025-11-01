@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { filterAgendamentos } from "../../store/slices/agendamentoSlice";
+import { filterAgendamentos } from "../store/slices/agendamentoSlice";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay, addMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";

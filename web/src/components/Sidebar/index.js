@@ -13,7 +13,7 @@ export default function Sidebar() {
     const location = useLocation();
 
     const menuItems = [
-        { label: "Agendamentos", icon: CalendarBlankIcon, path: "/" },
+        { label: "Agendamentos", icon: CalendarBlankIcon, path: "/agendamentos" },
         { label: "Clientes", icon: IdentificationBadgeIcon, path: "/clientes" },
         { label: "Colaboradores", icon: AddressBookIcon, path: "/colaboradores" },
         { label: "Horarios", icon: ClockCounterClockwiseIcon, path: "/horarios-atendimento" },
@@ -29,15 +29,23 @@ export default function Sidebar() {
                 ${open ? "w-64" : "w-24"}`}
         >
             {/* Cabeçalho */}
-            <div className="flex items-center relative px-4 py-3 border-b border-[#30363d]">
-                <div className="bg-white w-8 h-8 rounded-md shrink-0 flex justify-center items-center">
-                    <span className="text-black font-bold text-sm">A</span>
-                </div>
+            <div className="flex items-center relative p-3">
+                {/* Logo */}
+                    <img
+                        src="/logo.png"       // Certifique que está em public/logo.png
+                        alt="Logo"
+                        className="w-10 h-10 object-contain"
+                    />
+
+                {/* Nome do espaço */}
                 <div className={`absolute left-16 transition-all duration-300 ${open ? "opacity-100 visible" : "opacity-0 invisible"}`}>
                     <h1 className="font-semibold text-sm text-white">Nosso Espaço</h1>
                     <p className="text-xs text-zinc-500">Salão</p>
                 </div>
             </div>
+
+
+
 
             {/* Itens do menu */}
             <nav className="flex-1 mt-4 space-y-1 relative">

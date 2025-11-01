@@ -24,7 +24,6 @@ const SiteRoutes = () => {
                                 <Routes>
                                     {/* Redireciona a raiz para /agendamentos */}
                                     <Route path="/" element={<Navigate to="/agendamentos" />} />
-
                                     {/* Páginas principais */}
                                     <Route path="/agendamentos" element={<Agendamentos />} />
                                     <Route path="/clientes" element={<Clientes />} />

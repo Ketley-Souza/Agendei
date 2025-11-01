@@ -72,22 +72,14 @@ const Agendamentos = () => {
 
 
   const CustomToolbar = ({ label, onNavigate, onView, view }) => (
-    <div className="relative flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 rounded-t-lg shadow-sm">
+    <div className="relative flex flex-col md:flex-row items-center bg-white px-6 py-3 border-b border-gray-200 rounded-t-lg shadow-sm">
 
       {/* Navegação (voltar / próximo) */}
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={() => onNavigate("PREV")}
-          className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition"
-          title="Anterior"
-        >
+      <div className="flex items-center space-x-2 mb-2 md:mb-0">
+        <button onClick={() => onNavigate("PREV")} className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition">
           <CaretLeftIcon size={22} weight="bold" className="text-gray-700" />
         </button>
-        <button
-          onClick={() => onNavigate("NEXT")}
-          className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition"
-          title="Próximo"
-        >
+        <button onClick={() => onNavigate("NEXT")} className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition">
           <CaretRightIcon size={22} weight="bold" className="text-gray-700" />
         </button>
       </div>
@@ -98,7 +90,7 @@ const Agendamentos = () => {
       </h2>
 
       {/* Tipos de visualização */}
-      <div className="flex space-x-2">
+      <div className="flex flex-wrap sm:flex-nowrap gap-2 justify-center mt-2 sm:mt-0 md:ml-auto">
         {["month", "week", "day", "agenda"].map((mode) => (
           <button
             key={mode}
