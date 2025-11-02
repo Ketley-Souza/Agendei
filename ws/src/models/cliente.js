@@ -39,4 +39,8 @@ const cliente = new Schema({
    },
 });
 
+//Indices
+cliente.index({ email: 1 }); //Busca email
+cliente.index({ telefone: 1 }); //Busca telefone
+
 module.exports = mongoose.model('Cliente', cliente);

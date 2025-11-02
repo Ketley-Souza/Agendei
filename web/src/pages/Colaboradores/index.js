@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     allColaboradores,
@@ -20,11 +20,45 @@ import {
 } from 'rsuite';
 import { toast, Toaster } from 'react-hot-toast';
 
+//Foto colaborador
+const FotoColaborador = ({ foto, nome }) => {
+    const [imageError, setImageError] = useState(false);
+    const fotoUrl = foto
+        ? foto.startsWith('http') || foto.startsWith('/uploads')
+            ? foto.startsWith('http')
+                ? foto
+                : `${util.baseURL}${foto}`
+            : foto
+        : null;
+
+    return (
+        <div className="flex items-center justify-center w-full h-full py-2">
+            {fotoUrl && !imageError ? (
+                <div className="w-12 h-12 rounded-full border-2 border-gray-300 overflow-hidden bg-white flex items-center justify-center">
+                    <img
+                        src={fotoUrl}
+                        alt={nome || 'Colaborador'}
+                        className="w-full h-full object-contain"
+                        style={{ objectPosition: 'center' }}
+                        onError={() => setImageError(true)}
+                    />
+                </div>
+            ) : (
+                <div className="w-12 h-12 rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center text-gray-500 font-semibold">
+                    {nome ? nome.charAt(0).toUpperCase() : '?'}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const Colaboradores = () => {
     const dispatch = useDispatch();
     const { colaborador, colaboradores, servicos, form, components, behavior } = useSelector(
         (state) => state.colaborador
     );
+    const fileInputRef = useRef(null);
+    const [fotoPreview, setFotoPreview] = useState(null);
 
     // === Funções utilitárias ===
     const limparTelefone = (value) => value.replace(/\D/g, '');
@@ -71,6 +105,7 @@ const Colaboradores = () => {
         const colaboradorFormatado = {
             ...colaborador,
             telefone: limparTelefone(colaborador.telefone),
+            especialidades: colaborador.especialidades || [],
         };
 
         dispatch(updateColaborador({ colaborador: colaboradorFormatado }));
@@ -90,17 +125,75 @@ const Colaboradores = () => {
     };
 
     const onRowClick = (colab) => {
-        dispatch(updateColaborador({ colaborador: colab, behavior: 'update' }));
+        // Validando
+        const especialidadesParaEdicao = (colab.especialidadesIds || colab.especialidades || []).map(id => String(id));
+        const fotoUrl = colab.foto
+            ? colab.foto.startsWith('http') || colab.foto.startsWith('/uploads')
+                ? colab.foto.startsWith('http')
+                    ? colab.foto
+                    : `${util.baseURL}${colab.foto}`
+                : colab.foto
+            : null;
+        setFotoPreview(fotoUrl);
+        dispatch(updateColaborador({ 
+            colaborador: { ...colab, especialidades: especialidadesParaEdicao }, 
+            behavior: 'update' 
+        }));
         setComponents('drawer', true);
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validar tipo de arquivo
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                toast.error('Apenas imagens (JPEG, JPG, PNG, WEBP) são permitidas.');
+                return;
+            }
+
+            // Validar tamanho (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('A imagem deve ter no máximo 5MB.');
+                return;
+            }
+
+            // Criar preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFotoPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+
+            // Armazenar o arquivo no estado do colaborador (será enviado via FormData)
+            setColaborador('fotoFile', file);
+        }
+    };
+
+    const handleFotoClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleRemoveFoto = () => {
+        setFotoPreview(null);
+        setColaborador('fotoFile', null);
+        setColaborador('foto', '');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     const formatarEspecialidades = (especialidades) => {
         if (!Array.isArray(especialidades) || especialidades.length === 0) {
             return 'Sem especialidades';
         }
-        return especialidades.length === 1
-            ? especialidades[0]
-            : `${especialidades.length} especialidades`;
+        if (especialidades.length === 1) {
+            return especialidades[0];
+        }
+        if (especialidades.length <= 2) {
+            return especialidades.join(', ');
+        }
+        return `${especialidades.slice(0, 2).join(', ')} e +${especialidades.length - 2}`;
     };
 
     useEffect(() => {
@@ -119,6 +212,10 @@ const Colaboradores = () => {
                     onClick={() => {
                         dispatch(resetColaborador());
                         dispatch(updateColaborador({ behavior: 'create' }));
+                        setFotoPreview(null);
+                        if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                        }
                         setComponents('drawer', true);
                     }}
                     className="bg-[#CDA327] text-white px-2 py-2 lg:px-5 lg:py-3 rounded-lg hover:bg-[#CDA327]/20 transition-all"
@@ -133,6 +230,14 @@ const Colaboradores = () => {
                 rows={colaboradores || []}
                 loading={form.filtering}
                 config={[
+                    {
+                        label: 'Foto',
+                        key: 'foto',
+                        width: 80,
+                        content: (foto, rowData) => (
+                            <FotoColaborador foto={foto} nome={rowData.nome} />
+                        ),
+                    },
                     { label: 'Nome', key: 'nome' },
                     { label: 'Email', key: 'email' },
                     {
@@ -143,7 +248,24 @@ const Colaboradores = () => {
                     {
                         label: 'Especialidades',
                         key: 'especialidades',
-                        content: (esp) => formatarEspecialidades(esp),
+                        content: (esp) => (
+                            <div className="flex flex-wrap gap-1">
+                                {Array.isArray(esp) && esp.length > 0 ? (
+                                    esp.slice(0, 3).map((nome, index) => (
+                                        <Tag key={index} color="cyan" size="sm">
+                                            {nome}
+                                        </Tag>
+                                    ))
+                                ) : (
+                                    <span className="text-gray-400">Sem especialidades</span>
+                                )}
+                                {Array.isArray(esp) && esp.length > 3 && (
+                                    <Tag color="gray" size="sm">
+                                        +{esp.length - 3}
+                                    </Tag>
+                                )}
+                            </div>
+                        ),
                     },
                     {
                         label: 'Vínculo',
@@ -163,7 +285,13 @@ const Colaboradores = () => {
             <Drawer
                 open={components.drawer}
                 size="sm"
-                onClose={() => setComponents('drawer', false)}
+                onClose={() => {
+                    setComponents('drawer', false);
+                    setFotoPreview(null);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                }}
             >
                 <Drawer.Header className="border-b border-gray-200">
                     <Drawer.Title className="opacity-0 select-none">Placeholder</Drawer.Title>
@@ -181,6 +309,57 @@ const Colaboradores = () => {
                     )}
 
                     <div className="space-y-3 mt-4">
+                        {/* Campo Foto */}
+                        <div>
+                            <label className="block text-sm font-medium mb-2">
+                                Foto do Colaborador
+                            </label>
+                            <div className="flex items-center gap-4">
+                                <div
+                                    className="w-20 h-20 rounded-full border-2 border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#CDA327] transition-colors overflow-hidden bg-gray-100"
+                                    onClick={handleFotoClick}
+                                >
+                                    {fotoPreview ? (
+                                        <img
+                                            src={fotoPreview}
+                                            alt="Preview"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <span className="text-gray-400 text-2xl">📷</span>
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleFotoClick}
+                                        className="text-sm text-[#CDA327] hover:text-[#CDA327]/80 underline"
+                                    >
+                                        {fotoPreview ? 'Alterar foto' : 'Selecionar foto'}
+                                    </button>
+                                    {fotoPreview && (
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveFoto}
+                                            className="text-sm text-red-500 hover:text-red-700 underline"
+                                        >
+                                            Remover foto
+                                        </button>
+                                    )}
+                                </div>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Formatos aceitos: JPEG, JPG, PNG, WEBP (máx. 5MB)
+                            </p>
+                        </div>
+
                         <input
                             type="email"
                             placeholder="Email"
@@ -226,23 +405,41 @@ const Colaboradores = () => {
                             </label>
                             <select
                                 multiple
-                                className="rs-input w-full"
-                                value={colaborador.especialidades || []}
+                                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#CDA327]"
+                                value={(colaborador.especialidades || []).map(id => String(id))}
                                 onChange={(e) => {
-                                    const values = Array.from(e.target.selectedOptions, o => o.value);
+                                    const selectedOptions = Array.from(e.target.selectedOptions);
+                                    const values = selectedOptions.map(option => option.value);
                                     setColaborador('especialidades', values);
                                 }}
-                                style={{ minHeight: '100px' }}
+                                style={{ 
+                                    minHeight: '120px',
+                                    maxHeight: '200px',
+                                    overflowY: 'auto'
+                                }}
                             >
-                                {(servicos || []).map((serv) => (
-                                    <option key={serv.value || serv._id} value={serv.value || serv._id}>
-                                        {serv.label || serv.nomeServico}
-                                    </option>
-                                ))}
+                                {servicos && servicos.length > 0 ? (
+                                    servicos.map((serv) => {
+                                        const servId = String(serv.value || serv._id);
+                                        const servNome = serv.label || serv.nomeServico || 'Serviço sem nome';
+                                        return (
+                                            <option key={servId} value={servId}>
+                                                {servNome}
+                                            </option>
+                                        );
+                                    })
+                                ) : (
+                                    <option disabled>Nenhum serviço disponível</option>
+                                )}
                             </select>
                             <p className="text-xs text-gray-500 mt-1">
-                                Mantenha Ctrl/Cmd pressionado para selecionar múltiplos
+                                Mantenha Ctrl (Windows) ou Cmd (Mac) pressionado para selecionar múltiplos serviços
                             </p>
+                            {colaborador.especialidades && colaborador.especialidades.length > 0 && (
+                                <p className="text-xs text-green-600 mt-1">
+                                    {colaborador.especialidades.length} especialidade(s) selecionada(s)
+                                </p>
+                            )}
                         </div>
 
                         {behavior === 'create' && (

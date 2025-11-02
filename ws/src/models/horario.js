@@ -33,4 +33,8 @@ const horario = new Schema({
   },
 });
 
+//indices
+horario.index({ salaoId: 1 }); //Busca horários no salão
+horario.index({ dias: 1 }); //Busca dia semana
+
 module.exports = mongoose.model('Horario', horario);

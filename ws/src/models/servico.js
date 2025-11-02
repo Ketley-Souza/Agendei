@@ -24,7 +24,7 @@ const servico = new Schema({
     required: true,
   },
   imagem: {
-    type: String, // Caminho relativo da imagem salva no servidor
+    type: String,
     default: null,
   },
   status: {
@@ -39,5 +39,8 @@ const servico = new Schema({
   },
 
 });
+
+//Indices
+servico.index({ salaoId: 1, status: 1 }); //Busca serviço no salão status
 
 module.exports = mongoose.model('Servico', servico);

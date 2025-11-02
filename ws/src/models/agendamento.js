@@ -46,4 +46,10 @@ const agendamento = new Schema({
   },
 });
 
+//Indices
+agendamento.index({ salaoId: 1, data: 1, status: 1 }); //Filtro salão, data e status
+agendamento.index({ colaboradorId: 1, data: 1 }); //Busca agendamentos por colaborador e data
+agendamento.index({ status: 1 }); //Filtro por status
+agendamento.index({ clienteId: 1 }); //Busca agendamento cliente
+
 module.exports = mongoose.model('Agendamento', agendamento);

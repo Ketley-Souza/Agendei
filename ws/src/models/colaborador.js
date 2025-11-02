@@ -43,4 +43,8 @@ const colaborador = new Schema({
    },
 });
 
+//Indices
+colaborador.index({ email: 1 });
+colaborador.index({ telefone: 1 });
+
 module.exports = mongoose.model('Colaborador', colaborador);

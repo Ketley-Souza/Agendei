@@ -24,4 +24,8 @@ const statusCliente = new Schema({
   },
 });
 
+//Indices
+statusCliente.index({ salaoId: 1, status: 1 }); //Busca cliente no salão status
+statusCliente.index({ clienteId: 1 }); //Busca cliente
+
 module.exports = mongoose.model('StatusCliente', statusCliente);

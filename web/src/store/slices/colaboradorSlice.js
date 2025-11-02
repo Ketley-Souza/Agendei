@@ -79,10 +79,28 @@ export const addColaborador = createAsyncThunk(
         dispatch(updateColaborador({ form: { ...form, saving: true } }));
 
         try {
-            const res = await api.post('/colaborador', {
-                colaborador,
-                salaoId: consts.salaoId,
-            });
+            let res;
+            const { fotoFile, ...colaboradorData } = colaborador;
+
+            if (fotoFile) {
+                //Formdata
+                const formData = new FormData();
+                formData.append('foto', fotoFile);
+                formData.append('colaborador', JSON.stringify(colaboradorData));
+                formData.append('salaoId', consts.salaoId);
+
+                res = await api.post('/colaborador', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+            } else {
+                //Json
+                res = await api.post('/colaborador', {
+                    colaborador: colaboradorData,
+                    salaoId: consts.salaoId,
+                });
+            }
 
             dispatch(updateColaborador({ form: { ...form, saving: false } }));
 
@@ -109,7 +127,25 @@ export const saveColaborador = createAsyncThunk(
         dispatch(updateColaborador({ form: { ...form, saving: true } }));
 
         try {
-            const res = await api.put(`/colaborador/${colaborador._id}`, colaborador);
+            let res;
+            const { fotoFile, ...colaboradorData } = colaborador;
+
+            if (fotoFile) {
+                //Formdatra foto nova
+                const formData = new FormData();
+                formData.append('foto', fotoFile);
+                formData.append('colaborador', JSON.stringify(colaboradorData));
+
+                res = await api.put(`/colaborador/${colaborador._id}`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+            } else {
+                //Json
+                res = await api.put(`/colaborador/${colaborador._id}`, colaboradorData);
+            }
+
             dispatch(updateColaborador({ form: { ...form, saving: false } }));
 
             if (res.data.error) {

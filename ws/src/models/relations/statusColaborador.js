@@ -24,4 +24,8 @@ const statusColaborador = new Schema({
   },
 });
 
+//Indices
+statusColaborador.index({ salaoId: 1, status: 1 }); //Busca colaborador no salão status
+statusColaborador.index({ colaboradorId: 1 }); //Busca colaborador
+
 module.exports = mongoose.model('StatusColaborador', statusColaborador);

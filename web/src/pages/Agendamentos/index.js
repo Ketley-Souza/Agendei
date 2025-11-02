@@ -35,7 +35,8 @@ const Agendamentos = () => {
 
       return {
         resource: { agendamento },
-title: `${agendamento.servicoId.titulo} - ${agendamento.clienteId.nome} - ${agendamento.colaboradorId.nome}`,        start: inicio,
+        title: `${agendamento.servicoId?.titulo || 'Serviço?'} - ${agendamento.clienteId?.nome || 'Cliente?'} - ${agendamento.colaboradorId?.nome || 'Colaborador?'}`,
+        start: inicio,
         end: fim,
       };
     });

@@ -47,6 +47,17 @@ router.post('/', upload.single('imagem'), async (req, res) => {
         // Se o front enviar JSON em string (ex: via FormData)
         const jsonServico = req.body.servico ? JSON.parse(req.body.servico) : req.body;
 
+        //Validação
+        if (!jsonServico.nomeServico || !jsonServico.preco || !jsonServico.duracao || !req.body.salaoId) {
+            return res.status(400).json({ 
+                error: true, 
+                message: 'nomeServico, preco, duracao e salaoId são obrigatórios!' 
+            });
+        }
+        if (!require('mongoose').Types.ObjectId.isValid(req.body.salaoId)) {
+            return res.status(400).json({ error: true, message: 'salaoId inválido' });
+        }
+
         jsonServico.salaoId = req.body.salaoId;
         jsonServico.imagem = req.file ? `/uploads/servicos/${req.file.filename}` : null;
 
@@ -62,22 +73,61 @@ router.post('/', upload.single('imagem'), async (req, res) => {
 // LISTAR SERVIÇOS
 router.get('/salao/:salaoId', async (req, res) => {
     try {
+        const { salaoId } = req.params;
+        //Validando
+        if (!require('mongoose').Types.ObjectId.isValid(salaoId)) {
+            return res.status(400).json({ error: true, message: 'salaoId inválido' });
+        }
         const servicos = await Servico.find({
-            salaoId: req.params.salaoId,
+            salaoId,
             status: { $ne: 'Excluido' },
         });
-
         return res.json({ error: false, servicos });
     } catch (err) {
         console.error('Erro ao listar serviços:', err);
         return res.status(500).json({ error: true, message: err.message });
     }
 });
-
-// DELETAR SERVIÇO
+/*=====
+ATUALIZAR SERVIÇO
+=====*/  
+router.put('/:id', upload.single('imagem'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        //Validando
+        if (!require('mongoose').Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: true, message: 'ID inválido' });
+        }
+        //Caso de json em string
+        const jsonServico = req.body.servico ? JSON.parse(req.body.servico) : req.body;
+        //Atualizar imagem
+        if (req.file) {
+            jsonServico.imagem = `/uploads/servicos/${req.file.filename}`;
+        }
+        const servico = await Servico.findByIdAndUpdate(id, jsonServico, { new: true });
+        if (!servico) {
+            return res.status(404).json({ error: true, message: 'Serviço não encontrado!' });
+        }
+        return res.json({ error: false, servico });
+    } catch (err) {
+        console.error('Não foi possivel atualizar o serviço:', err);
+        return res.status(500).json({ error: true, message: err.message });
+    }
+});
+/*=====
+DELETAR SERVIÇO
+=====*/
 router.delete('/:id', async (req, res) => {
     try {
-        await Servico.findByIdAndUpdate(req.params.id, { status: 'Excluido' });
+        const { id } = req.params;
+        //Validando
+        if (!require('mongoose').Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: true, message: 'id inválido!' });
+        }
+        const servico = await Servico.findByIdAndUpdate(id, { status: 'Excluido' }, { new: true });
+        if (!servico) {
+            return res.status(404).json({ error: true, message: 'Serviço não encontrado!' });
+        }
         return res.json({ error: false, message: 'Serviço excluído com sucesso!' });
     } catch (err) {
         console.error('Erro ao excluir serviço:', err);

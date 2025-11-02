@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
+import consts from '../../consts';
 
 // 🔹 ESTADO INICIAL
 const INITIAL_STATE = {
@@ -37,7 +38,7 @@ export const addHorario = createAsyncThunk(
 
             const { data: res } = await api.post('/horario', {
                 ...horario,
-                salaoId: '6900e253af801dc9cafa5682',
+                salaoId: consts.salaoId,
             });
 
             dispatch(updateHorario({ form: { ...form, saving: false } }));
@@ -65,7 +66,7 @@ export const allHorarios = createAsyncThunk(
             const { form } = getState().horario;
             dispatch(updateHorario({ form: { ...form, filtering: true } }));
 
-            const { data: res } = await api.get(`/horario/salao/6900e253af801dc9cafa5682`);
+            const { data: res } = await api.get(`/horario/salao/${consts.salaoId}`);
             dispatch(updateHorario({ form: { ...form, filtering: false } }));
 
             if (res.error) {
@@ -146,7 +147,7 @@ export const allServicos = createAsyncThunk(
             const { form } = getState().horario;
             dispatch(updateHorario({ form: { ...form, filtering: true } }));
 
-            const { data: res } = await api.get(`/salao/servicos/6900e253af801dc9cafa5682`);
+            const { data: res } = await api.get(`/salao/servicos/${consts.salaoId}`);
             dispatch(updateHorario({ form: { ...form, filtering: false } }));
 
             if (res.error) {

@@ -86,8 +86,15 @@ router.post('/filter', async (req, res) => {
 // Listar clientes de um salão
 router.get('/salao/:salaoId', async (req, res) => {
     try {
+        const { salaoId } = req.params;
+
+        // Validação de ObjectId
+        if (!mongoose.Types.ObjectId.isValid(salaoId)) {
+            return res.status(400).json({ error: true, message: 'salaoId inválido' });
+        }
+
         const clientes = await StatusCliente.find({
-            salaoId: req.params.salaoId,
+            salaoId,
             status: 'Disponivel',
         })
             .populate('clienteId')
@@ -110,7 +117,19 @@ router.get('/salao/:salaoId', async (req, res) => {
 // Desvincular cliente (tornar Indisponivel)
 router.delete('/vinculo/:id', async (req, res) => {
     try {
-        await StatusCliente.findByIdAndUpdate(req.params.id, { status: 'Indisponivel' });
+        const { id } = req.params;
+
+        //Validando
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: true, message: 'ID inválido' });
+        }
+
+        const vinculo = await StatusCliente.findByIdAndUpdate(id, { status: 'Indisponivel' }, { new: true });
+
+        if (!vinculo) {
+            return res.status(404).json({ error: true, message: 'Vínculo não encontrado' });
+        }
+
         res.json({ error: false, message: 'Cliente desvinculado com sucesso!' });
     } catch (err) {
         res.json({ error: true, message: err.message });

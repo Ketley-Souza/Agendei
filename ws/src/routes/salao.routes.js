@@ -3,6 +3,7 @@ const router = express.Router();
 const Salao = require('../models/salao');
 const Servico = require('../models/servico');
 const Horario = require('../models/horario');
+const util = require('../util');
 
 // Rota para criar um novo salão
 router.post('/', async (req, res) => {
@@ -27,12 +28,12 @@ router.get('/servicos/:salaoId', async (req, res) => {
         const servicos = await Servico.find({
             salaoId,
             status: 'Disponivel',
-        }).select('_id titulo'); // seleciona apenas o ID e o título
+        }).select('_id nomeServico'); // seleciona apenas o ID e o nome
 
         // Retorna os serviços no formato { label: nome, value: id }
         res.json({
             error: false,
-            servicos: servicos.map((s) => ({ label: s.titulo, value: s._id })),
+            servicos: servicos.map((s) => ({ label: s.nomeServico, value: s._id })),
         });
     } catch (err) {
         res.json({ error: true, message: err.message });
@@ -42,14 +43,23 @@ router.get('/servicos/:salaoId', async (req, res) => {
 // Rota para filtrar dados de um salão
 router.post('/filter/:id', async (req, res) => {
     try {
+        const { id } = req.params;
+        //Validando
+        const mongoose = require('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: true, message: 'ID inválido' });
+        }
         // Busca o salão pelo ID enviado na URL e seleciona apenas os campos solicitados no corpo da requisição
-        const salao = await Salao.findById(req.params.id).select(req.body.fields);
+        const salao = await Salao.findById(id).select(req.body.fields);
 
+        //Validadndo se existe
+        if (!salao) {
+            return res.status(404).json({ error: true, message: 'Salão não encontrado' });
+        }
         // Busca os horários de funcionamento do salão no banco
         const horarios = await Horario.find({
-            salaoId: req.params.id,
+            salaoId: id,
         }).select('dias inicio fim'); // apenas os campos dias, início e fim
-
         // Usa uma função auxiliar (util.isOpened) para saber se o salão está aberto agora
         const isOpened = await util.isOpened(horarios);
 
