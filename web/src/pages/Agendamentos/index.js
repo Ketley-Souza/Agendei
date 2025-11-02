@@ -7,9 +7,6 @@ import { ptBR } from "date-fns/locale";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
-
-
-
 const locales = {
   "pt-BR": ptBR,
 };
@@ -26,6 +23,7 @@ const Agendamentos = () => {
   const dispatch = useDispatch();
   const { agendamentos } = useSelector((state) => state.agendamento);
   const [view, setView] = useState("month");
+
   // === Formata os eventos ===
   const formatEventos = () =>
     agendamentos.map((agendamento) => {
@@ -35,7 +33,7 @@ const Agendamentos = () => {
 
       return {
         resource: { agendamento },
-        title: `${agendamento.servicoId?.titulo || 'Serviço?'} - ${agendamento.clienteId?.nome || 'Cliente?'} - ${agendamento.colaboradorId?.nome || 'Colaborador?'}`,
+        title: `${agendamento.servicoId.nomeServico} - ${agendamento.clienteId.nome} - ${agendamento.colaboradorId.nome}`,
         start: inicio,
         end: fim,
       };
@@ -69,17 +67,21 @@ const Agendamentos = () => {
   // === Renderiza cada evento ===
   const renderEvento = ({ event }) => <span>{event.title}</span>;
 
-
-
+  // === Toolbar personalizada ===
   const CustomToolbar = ({ label, onNavigate, onView, view }) => (
     <div className="relative flex flex-col md:flex-row items-center bg-white px-6 py-3 border-b border-gray-200 rounded-t-lg shadow-sm">
-
       {/* Navegação (voltar / próximo) */}
       <div className="flex items-center space-x-2 mb-2 md:mb-0">
-        <button onClick={() => onNavigate("PREV")} className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition">
+        <button
+          onClick={() => onNavigate("PREV")}
+          className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition"
+        >
           <CaretLeftIcon size={22} weight="bold" className="text-gray-700" />
         </button>
-        <button onClick={() => onNavigate("NEXT")} className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition">
+        <button
+          onClick={() => onNavigate("NEXT")}
+          className="p-2 rounded-full hover:bg-gray-100 bg-gray-200 transition"
+        >
           <CaretRightIcon size={22} weight="bold" className="text-gray-700" />
         </button>
       </div>
@@ -89,18 +91,23 @@ const Agendamentos = () => {
         {label}
       </h2>
 
-      {/* Tipos de visualização */}
+      {/* Tipos de visualização — removemos o "day" */}
       <div className="flex flex-wrap sm:flex-nowrap gap-2 justify-center mt-2 sm:mt-0 md:ml-auto">
-        {["month", "week", "day", "agenda"].map((mode) => (
+        {["month", "week", "agenda"].map((mode) => (
           <button
             key={mode}
             onClick={() => onView(mode)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition ${view === mode
-              ? "bg-yellow-600/70 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition ${
+              view === mode
+                ? "bg-yellow-600/70 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
           >
-            {mode === "month" ? "Mês" : mode === "week" ? "Semana" : mode === "day" ? "Dia" : "Agenda"}
+            {mode === "month"
+              ? "Mês"
+              : mode === "week"
+              ? "Semana"
+              : "Agenda"}
           </button>
         ))}
       </div>
@@ -132,6 +139,21 @@ const Agendamentos = () => {
           }}
           popup
           selectable
+          eventPropGetter={(event) => {
+            // cor do agendamento - evento
+            if (view !== "agenda") {
+              return {
+                style: {
+                  backgroundColor: "#000000",
+                  color: "#ffffff",
+                  borderRadius: "4px",
+                  border: "none",
+                  padding: "2px 4px",
+                },
+              };
+            }
+            return {}; // agenda mantém padrão
+          }}
           style={{ minHeight: "600px", height: "calc(100vh - 220px)" }}
           messages={{
             allDay: "Dia inteiro",

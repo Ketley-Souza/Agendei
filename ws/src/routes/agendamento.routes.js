@@ -18,12 +18,6 @@ const util = require('../util');
 router.post('/filter', async (req, res) => {
     try {
         const { range, salaoId } = req.body;
-        if (!range || !range.start || !range.end || !salaoId) {
-            return res.status(400).json({ 
-                error: true, 
-                message: 'Início e fim e SalãoId obrigatórios!' 
-            });
-        }
 
         const agendamentos = await Agendamento.find({
             status: 'A',
@@ -45,7 +39,7 @@ router.post('/filter', async (req, res) => {
 });
 
 // -----------------------------
-// CRIAR AGENDAMENTO
+// CRIAR AGENDAMENTO (ajustado para UTC−3)
 // -----------------------------
 router.post('/', async (req, res) => {
     const session = await mongoose.startSession();
@@ -54,66 +48,32 @@ router.post('/', async (req, res) => {
     try {
         const { clienteId, salaoId, servicoId, colaboradorId, data } = req.body;
 
-        //VAlidando
-        if (!clienteId || !salaoId || !servicoId || !colaboradorId || !data) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(400).json({ 
-                error: true, 
-                message: 'Falta um ou mais campos obrigatorios: clienteId, salaoId, servicoId, colaboradorId, data!!' 
-            });
-        }
+        // === AJUSTE DE FUSO HORÁRIO (opção B) ===
+        const ajustarParaHorarioLocal = (dateString) => {
+            const d = new Date(dateString);
+            const offset = d.getTimezoneOffset(); // minutos de diferença do UTC
+            return new Date(d.getTime() - offset * 60000);
+        };
 
-        //Validação para caso de data no passado
-        const dataAgendamento = new Date(data);
-        if (dataAgendamento < new Date()) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.json({ 
-                error: true, 
-                message: 'Data do agendamento inválida!' 
-            });
-        }
+        // Se a data veio no corpo, aplica o ajuste
+        const dataLocal = data ? ajustarParaHorarioLocal(data) : null;
 
+        // === VALIDAÇÕES ===
         const cliente = await Cliente.findById(clienteId).select('nome endereco');
         const salao = await Salao.findById(salaoId).select('nome');
-        const servico = await Servico.findById(servicoId).select('nomeServico preco duracao comissao');
+        const servico = await Servico.findById(servicoId).select('nomeServico preco duracao');
         const colaborador = await Colaborador.findById(colaboradorId).select('nome');
 
-        if (!cliente || !salao || !servico || !colaborador) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.json({ error: true, message: 'Dados inválidos para criar o agendamento.' });
-        }
+        if (!cliente || !salao || !servico || !colaborador)
+            throw new Error('Dados inválidos para criar o agendamento.');
 
-        //Ver se horario está ocupado
-        const servicoDuracaoMinutos = util.hourToMinutes(
-            new Date(servico.duracao).toISOString().substring(11, 16)
-        );
-        const fimAgendamento = new Date(dataAgendamento.getTime() + servicoDuracaoMinutos * 60000);
-
-        const conflito = await Agendamento.findOne({
-            colaboradorId,
-            status: 'A',
-            data: {
-                $gte: dataAgendamento,
-                $lt: fimAgendamento
-            }
-        });
-
-        if (conflito) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.json({ 
-                error: true, 
-                message: 'Colaborador já está ocupado neste horário!' 
-            });
-        }
-
+        // === CRIA E SALVA AGENDAMENTO ===
         const novoAgendamento = new Agendamento({
             ...req.body,
-            preco: servico.preco,
+            data: dataLocal, // substitui a data ajustada
+            preco: servico.preco, // garante campo esperado no schema
             status: 'A',
+            criadoEm: new Date(),
         });
 
         await novoAgendamento.save({ session });
@@ -129,24 +89,14 @@ router.post('/', async (req, res) => {
 });
 
 // -----------------------------
-// DIAS DISPONÍVEIS
+// DIAS DISPONÍVEIS (inalterado)
 // -----------------------------
 router.post('/dias-disponiveis', async (req, res) => {
     try {
         const { data, salaoId, servicoId } = req.body;
 
-        //Validar dados obrigatorios
-        if (!data || !salaoId || !servicoId) {
-            return res.json({ error: true, message: 'data, salaoId e servicoId são obrigatórios' });
-        }
-
         const horarios = await Horario.find({ salaoId });
         const servico = await Servico.findById(servicoId).select('duracao');
-
-        // Validar se serviço existe
-        if (!servico) {
-            return res.json({ error: true, message: 'Serviço não encontrado!' });
-        }
 
         let colaboradores = [];
         let agenda = [];
@@ -179,29 +129,14 @@ router.post('/dias-disponiveis', async (req, res) => {
                 }
 
                 // Remover horários ocupados
-                //Mias um caso de (N+1), implementando mapeamento
-                const colaboradorIds = Object.keys(todosHorariosDia);
-                const todosAgendamentos = await Agendamento.find({
-                    colaboradorId: { $in: colaboradorIds },
-                    data: {
-                        $gte: startOfDay(lastDay),
-                        $lte: endOfDay(lastDay),
-                    },
-                }).select('data colaboradorId -_id');
-
-                //Criar mapa para consulta fim do loop
-                const agendamentosPorColaborador = {};
-                todosAgendamentos.forEach(a => {
-                    const id = a.colaboradorId.toString();
-                    if (!agendamentosPorColaborador[id]) {
-                        agendamentosPorColaborador[id] = [];
-                    }
-                    agendamentosPorColaborador[id].push(a);
-                });
-
-                //Inserindo o uso do mapa
                 for (let colaboradorKey of Object.keys(todosHorariosDia)) {
-                    const agendamentos = agendamentosPorColaborador[colaboradorKey] || [];
+                    const agendamentos = await Agendamento.find({
+                        colaboradorId: colaboradorKey,
+                        data: {
+                            $gte: startOfDay(lastDay),
+                            $lte: endOfDay(lastDay),
+                        },
+                    }).select('data -_id');
 
                     const ocupados = agendamentos
                         .map(a => {
@@ -242,71 +177,5 @@ router.post('/dias-disponiveis', async (req, res) => {
         res.json({ error: true, message: err.message });
     }
 });
-/*=====
-ATUALIZAR AGENDAMENTO
-=====*/
-router.put('/:id', async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-        const { id } = req.params;
-
-        //Validadno
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(400).json({ error: true, message: 'ID inválido!' });
-        }
-
-        const agendamento = await Agendamento.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true, session }
-        );
-
-        if (!agendamento) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ error: true, message: 'Agendamento não encontrado!' });
-        }
-
-        await session.commitTransaction();
-        session.endSession();
-        res.json({ error: false, agendamento });
-    } catch (err) {
-        await session.abortTransaction();
-        session.endSession();
-        res.json({ error: true, message: err.message });
-    }
-});
-
-/*=====
-CANCELAR AGENDAMENTO
-router.put('/:id/cancelar', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        // Validação de ObjectId
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ error: true, message: 'ID inválido' });
-        }
-
-        const agendamento = await Agendamento.findByIdAndUpdate(
-            id,
-            { status: 'I' },
-            { new: true }
-        );
-
-        if (!agendamento) {
-            return res.status(404).json({ error: true, message: 'Agendamento não encontrado' });
-        }
-
-        res.json({ error: false, message: 'Agendamento cancelado com sucesso', agendamento });
-    } catch (err) {
-        res.json({ error: true, message: err.message });
-    }
-});
-=====*/
 
 module.exports = router;

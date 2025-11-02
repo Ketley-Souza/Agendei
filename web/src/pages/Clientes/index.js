@@ -168,6 +168,7 @@ const Clientes = () => {
                             className="rs-input w-full"
                             value={cliente.nome}
                             onChange={(e) => setCliente('nome', e.target.value)}
+                            disabled={behavior !== 'create'}
                         />
                         <input
                             type="text"
@@ -175,16 +176,19 @@ const Clientes = () => {
                             className="rs-input w-full"
                             value={formatarTelefone(cliente.telefone)}
                             onChange={(e) => setCliente('telefone', e.target.value)}
+                            disabled={behavior !== 'create'}
                         />
                         <input
                             type="date"
                             className="rs-input w-full"
                             value={cliente.dataNascimento}
                             onChange={(e) => setCliente('dataNascimento', e.target.value)}
+                            disabled={behavior !== 'create'}
                         />
                         <select
                             className="rs-input w-full"
                             value={cliente.sexo}
+                            disabled={behavior !== 'create'}
                             onChange={(e) => setCliente('sexo', e.target.value)}
                         >
                             <option value="">Selecione o sexo</option>

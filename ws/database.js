@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
+require('dotenv').config(); // carrega as variáveis do .env
 
-const URI = 'mongodb+srv://ketley_db:ZCsHSrkZNZtNM3hJ@agendei-db.rha1m75.mongodb.net/nosso_espaco?appName=Agendei-db';
-
+const URI = process.env.MONGODB_URI;
 
 mongoose.connect(URI)
     .then(() => console.log('Banco de dados conectado!'))

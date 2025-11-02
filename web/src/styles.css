@@ -18,3 +18,22 @@
     background: none;       /* remove background padrão */
 }
 
+
+
+.rs-input:hover,
+textarea.rs-input:hover,
+select.rs-input:hover {
+  border-color: #CDA327 !important;
+}
+
+.rs-input:focus,
+.rs-input:focus-visible,
+textarea.rs-input:focus,
+textarea.rs-input:focus-visible,
+select.rs-input:focus,
+select.rs-input:focus-visible {
+  border-color: #CDA327 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 4px rgba(205, 163, 39, 0.16) !important;
+}
+
