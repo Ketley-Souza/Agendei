@@ -7,13 +7,13 @@
     "@reduxjs/toolkit": "^2.9.2",
     "axios": "^1.13.1",
     "date-fns": "^4.1.0",
-    "react": "18",
+    "react": "^18.2.0",
     "react-big-calendar": "^1.19.4",
-    "react-dom": "18",
+    "react-dom": "^18.2.0",
     "react-hot-toast": "^2.6.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.5",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "rsuite": "^5.83.3",
     "web-vitals": "^2.1.4"
   },
@@ -23,11 +23,16 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.0",
+    "nth-check": "^2.1.1"
+  },
+  "overrides": {
+    "postcss": "^8.4.31",
+    "nth-check": "^2.1.1",
+    "webpack-dev-server": "^4.15.1"
   },
   "browserslist": {
     "production": [
@@ -40,11 +45,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "packageManager": "yarn@4.10.3+sha512.c38cafb5c7bb273f3926d04e55e1d8c9dfa7d9c3ea1f36a4868fa028b9e5f72298f0b7f401ad5eb921749eb012eb1c3bb74bf7503df3ee43fd600d14a018266f",
-  "devDependencies": {
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.6",
-    "tailwindcss": "3"
   }
 }

@@ -11,7 +11,20 @@ router.post('/', async (req, res) => {
     session.startTransaction();
 
     try {
-        const { cliente, salaoId } = req.body;
+        let cliente;
+        let salaoId;
+        
+        if (req.body.cliente) {
+            cliente = typeof req.body.cliente === 'string' 
+                ? JSON.parse(req.body.cliente) 
+                : req.body.cliente;
+            salaoId = req.body.salaoId;
+        } else {
+            const { salaoId: id, ...clienteData } = req.body;
+            cliente = clienteData;
+            salaoId = id;
+        }
+        
         let newClient = null;
 
         // Verifica se o cliente já existe pelo email ou telefone

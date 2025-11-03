@@ -44,8 +44,18 @@ const upload = multer({
 // CRIAR SERVIÇO
 router.post('/', upload.single('imagem'), async (req, res) => {
     try {
-        // Se o front enviar JSON em string (ex: via FormData)
-        const jsonServico = req.body.servico ? JSON.parse(req.body.servico) : req.body;
+        //Pra testar com o Thunder
+        let jsonServico;
+        
+        if (req.body.servico) {
+            //Formdata
+            jsonServico = typeof req.body.servico === 'string' 
+                ? JSON.parse(req.body.servico) 
+                : req.body.servico;
+        } else {
+            //Json puro
+            jsonServico = req.body;
+        }
 
         //Validação
         if (!jsonServico.nomeServico || !jsonServico.preco || !jsonServico.duracao || !req.body.salaoId) {
@@ -98,12 +108,22 @@ router.put('/:id', upload.single('imagem'), async (req, res) => {
         if (!require('mongoose').Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: true, message: 'ID inválido' });
         }
-        //Caso de json em string
-        const jsonServico = req.body.servico ? JSON.parse(req.body.servico) : req.body;
+        
+        //Aceitando Json e Formdata
+        let jsonServico;
+        if (req.body.servico) {
+            jsonServico = typeof req.body.servico === 'string' 
+                ? JSON.parse(req.body.servico) 
+                : req.body.servico;
+        } else {
+            jsonServico = req.body;
+        }
+        
         //Atualizar imagem
         if (req.file) {
             jsonServico.imagem = `/uploads/servicos/${req.file.filename}`;
         }
+        
         const servico = await Servico.findByIdAndUpdate(id, jsonServico, { new: true });
         if (!servico) {
             return res.status(404).json({ error: true, message: 'Serviço não encontrado!' });

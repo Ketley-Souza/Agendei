@@ -27,7 +27,8 @@ router.post('/filter', async (req, res) => {
                 $lte: endOfDay(new Date(range.end)),
             },
         }).populate([
-            { path: 'servicoId', select: 'nomeServico duracao' },
+            { path: 'servicoId', select: 'nomeServico duracao preco' },
+            { path: 'servicosAdicionais', select: 'nomeServico duracao preco' },
             { path: 'colaboradorId', select: 'nome' },
             { path: 'clienteId', select: 'nome' },
         ]);
@@ -46,16 +47,15 @@ router.post('/', async (req, res) => {
     session.startTransaction();
 
     try {
-        const { clienteId, salaoId, servicoId, colaboradorId, data } = req.body;
+        const { clienteId, salaoId, servicoId, servicosAdicionais, colaboradorId, data } = req.body;
 
-        // === AJUSTE DE FUSO HORÁRIO (opção B) ===
+        // === AJUSTE DE FUSO HORÁRIO ===
         const ajustarParaHorarioLocal = (dateString) => {
             const d = new Date(dateString);
-            const offset = d.getTimezoneOffset(); // minutos de diferença do UTC
+            const offset = d.getTimezoneOffset();
             return new Date(d.getTime() - offset * 60000);
         };
 
-        // Se a data veio no corpo, aplica o ajuste
         const dataLocal = data ? ajustarParaHorarioLocal(data) : null;
 
         // === VALIDAÇÕES ===
@@ -67,20 +67,46 @@ router.post('/', async (req, res) => {
         if (!cliente || !salao || !servico || !colaborador)
             throw new Error('Dados inválidos para criar o agendamento.');
 
+        //Buscar outros serviçõs
+        let servicosAdicionaisData = [];
+        let precoTotal = servico.preco;
+
+        if (servicosAdicionais && Array.isArray(servicosAdicionais) && servicosAdicionais.length > 0) {
+            servicosAdicionaisData = await Servico.find({
+                _id: { $in: servicosAdicionais }
+            }).select('nomeServico preco duracao');
+            
+            //Somar preço total
+            precoTotal += servicosAdicionaisData.reduce((sum, s) => sum + s.preco, 0);
+        }
+        const transactionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
         // === CRIA E SALVA AGENDAMENTO ===
         const novoAgendamento = new Agendamento({
-            ...req.body,
-            data: dataLocal, // substitui a data ajustada
-            preco: servico.preco, // garante campo esperado no schema
+            salaoId,
+            clienteId,
+            servicoId,
+            servicosAdicionais: servicosAdicionaisData.map(s => s._id),
+            colaboradorId,
+            data: dataLocal,
+            preco: precoTotal,
             status: 'A',
-            criadoEm: new Date(),
+            transactionId,
+            dataCadastro: new Date(),
         });
 
         await novoAgendamento.save({ session });
         await session.commitTransaction();
         session.endSession();
 
-        res.json({ error: false, agendamento: novoAgendamento });
+        // Retornar com populate
+        const agendamentoPopulado = await Agendamento.findById(novoAgendamento._id)
+            .populate('servicoId', 'nomeServico duracao preco')
+            .populate('servicosAdicionais', 'nomeServico duracao preco')
+            .populate('clienteId', 'nome')
+            .populate('colaboradorId', 'nome');
+
+        res.json({ error: false, agendamento: agendamentoPopulado });
     } catch (err) {
         await session.abortTransaction();
         session.endSession();

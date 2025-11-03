@@ -1,5 +1,6 @@
 const CONSTS = {
-    salaoId: '6900e253af801dc9cafa5682',
+    //salaoId: '6900e253af801dc9cafa5682',
+    salaoId: '673d3a8b9fe66ce493b6af2d',
     clienteId: '69065992385c9490a77021c8'
 };
 

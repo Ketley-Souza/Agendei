@@ -16,7 +16,7 @@ const servico = new Schema({
     required: true,
   },
   duracao: {
-    type: String,
+    type: Number,
     required: true,
   },
   descricao: {
@@ -39,6 +39,22 @@ const servico = new Schema({
   },
 
 });
+
+// Virtual para formatar duração para exibição
+servico.virtual('duracaoFormatada').get(function() {
+  const horas = Math.floor(this.duracao / 60);
+  const minutos = this.duracao % 60;
+  
+  if (horas > 0 && minutos > 0) {
+    return `${horas}h${minutos.toString().padStart(2, '0')}min`;
+  } else if (horas > 0) {
+    return `${horas}h00min`;
+  } else {
+    return `${minutos}min`;
+  }
+});
+servico.set('toJSON', { virtuals: true });
+servico.set('toObject', { virtuals: true });
 
 //Indices
 servico.index({ salaoId: 1, status: 1 }); //Busca serviço no salão status

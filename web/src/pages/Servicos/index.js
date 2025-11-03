@@ -232,7 +232,11 @@ const Servicos = () => {
                         key: 'preco',
                         content: (preco) => formatarPreco(preco),
                     },
-                    { label: 'Duração', key: 'duracao' },
+                    { 
+                        label: 'Duração', 
+                        key: 'duracao',
+                        content: (duracao) => util.formatarDuracao(duracao),
+                    },
                     {
                         label: 'Status',
                         key: 'status',
@@ -353,15 +357,21 @@ const Servicos = () => {
 
                         <div>
                             <label className="block text-sm font-medium mb-2">
-                                Duração *
+                                Duração (em minutos) *
                             </label>
                             <input
-                                type="text"
-                                placeholder="Ex: 30 min, 1h, 1h30min"
+                                type="number"
+                                placeholder="Ex: 30, 60, 90, 120"
                                 className="rs-input w-full"
                                 value={servico.duracao || ''}
-                                onChange={(e) => setServico('duracao', e.target.value)}
+                                onChange={(e) => setServico('duracao', parseInt(e.target.value) || 0)}
+                                min="0"
                             />
+                            {servico.duracao > 0 && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Equivalente a: {util.formatarDuracao(servico.duracao)}
+                                </p>
+                            )}
                         </div>
 
                         <div>

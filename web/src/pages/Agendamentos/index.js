@@ -28,12 +28,34 @@ const Agendamentos = () => {
   const formatEventos = () =>
     agendamentos.map((agendamento) => {
       const inicio = new Date(agendamento.data);
-      const duracao = agendamento.servicoId?.duracao || 0;
-      const fim = addMinutes(inicio, duracao);
+      
+      //Usar ou calcular duração total
+      let duracaoTotal = agendamento.duracaoTotal || agendamento.servicoId?.duracao || 0;
+      
+      //Fun para calcular duração total
+      if (!agendamento.duracaoTotal) {
+        if (agendamento.servicosAdicionais && Array.isArray(agendamento.servicosAdicionais)) {
+          agendamento.servicosAdicionais.forEach(servico => {
+            duracaoTotal += servico.duracao || 0;
+          });
+        }
+      }
+      
+      const fim = addMinutes(inicio, duracaoTotal);
+
+      //Colocar os serviços juntos
+      const nomeServicoPrincipal = agendamento.servicoId?.nomeServico || 'Serviço';
+      const nomesAdicionais = agendamento.servicosAdicionais && Array.isArray(agendamento.servicosAdicionais)
+        ? agendamento.servicosAdicionais.map(s => s.nomeServico).filter(Boolean)
+        : [];
+      
+      const todosServicos = nomesAdicionais.length > 0
+        ? `${nomeServicoPrincipal} + ${nomesAdicionais.join(' + ')}`
+        : nomeServicoPrincipal;
 
       return {
         resource: { agendamento },
-        title: `${agendamento.servicoId.nomeServico} - ${agendamento.clienteId.nome} - ${agendamento.colaboradorId.nome}`,
+        title: `${todosServicos} - ${agendamento.clienteId?.nome || 'Cliente'} - ${agendamento.colaboradorId?.nome || 'Colaborador'}`,
         start: inicio,
         end: fim,
       };

@@ -7,6 +7,7 @@ import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { Modal, Button, Message } from "rsuite";
+import util from "../services/util";
 import axios from "axios";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
@@ -25,6 +26,7 @@ const Agendamentos = () => {
         clienteId: "",
         salaoId: "",
         servicoId: "",
+        servicosAdicionais: [], // Array opcional de serviços adicionais
         colaboradorId: "",
     });
 
@@ -32,12 +34,30 @@ const Agendamentos = () => {
     const formatEventos = () =>
         agendamentos.map((agendamento) => {
             const inicio = new Date(agendamento.data);
-            const duracao = agendamento.servicoId?.duracao || 0;
-            const fim = addMinutes(inicio, duracao);
+            
+            // Calcular duração total (serviço principal + adicionais)
+            let duracaoTotal = util.duracaoParaMinutos(agendamento.servicoId?.duracao || 0);
+            
+            // Somar duração dos serviços adicionais
+            if (agendamento.servicosAdicionais && Array.isArray(agendamento.servicosAdicionais)) {
+                agendamento.servicosAdicionais.forEach(servico => {
+                    duracaoTotal += util.duracaoParaMinutos(servico?.duracao || 0);
+                });
+            }
+            
+            const fim = addMinutes(inicio, duracaoTotal);
+
+            // Concatenar nomes dos serviços
+            const nomeServicoPrincipal = agendamento.servicoId?.nomeServico || 'Serviço?';
+            const nomesAdicionais = agendamento.servicosAdicionais && Array.isArray(agendamento.servicosAdicionais)
+                ? agendamento.servicosAdicionais.map(s => s?.nomeServico).filter(Boolean)
+                : [];
+            
+            const todosServicos = [nomeServicoPrincipal, ...nomesAdicionais].join(', ');
 
             return {
                 resource: { agendamento },
-                title: `${agendamento.servicoId.titulo} - ${agendamento.clienteId.nome} - ${agendamento.colaboradorId.nome}`,
+                title: `${todosServicos} - ${agendamento.clienteId?.nome || 'Cliente?'} - ${agendamento.colaboradorId?.nome || 'Colaborador?'}`,
                 start: inicio,
                 end: fim,
             };
@@ -160,8 +180,21 @@ const Agendamentos = () => {
                         <input type="text" value={formData.salaoId} onChange={(e) => setFormData({ ...formData, salaoId: e.target.value })} className="border p-2 w-full rounded mb-2" />
                     </label>
                     <label className="block mb-2">
-                        Serviço:
+                        Serviço Principal:
                         <input type="text" value={formData.servicoId} onChange={(e) => setFormData({ ...formData, servicoId: e.target.value })} className="border p-2 w-full rounded mb-2" />
+                    </label>
+                    <label className="block mb-2">
+                        Serviços Adicionais (IDs separados por vírgula):
+                        <input 
+                            type="text" 
+                            value={formData.servicosAdicionais.join(', ')} 
+                            onChange={(e) => setFormData({ 
+                                ...formData, 
+                                servicosAdicionais: e.target.value.split(',').map(id => id.trim()).filter(Boolean) 
+                            })} 
+                            className="border p-2 w-full rounded mb-2"
+                            placeholder="Opcional: 123abc, 456def"
+                        />
                     </label>
                     <label className="block mb-2">
                         Colaborador:
