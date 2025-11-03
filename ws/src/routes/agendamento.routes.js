@@ -79,7 +79,6 @@ router.post('/', async (req, res) => {
             //Somar preço total
             precoTotal += servicosAdicionaisData.reduce((sum, s) => sum + s.preco, 0);
         }
-        const transactionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
         // === CRIA E SALVA AGENDAMENTO ===
         const novoAgendamento = new Agendamento({
@@ -91,7 +90,6 @@ router.post('/', async (req, res) => {
             data: dataLocal,
             preco: precoTotal,
             status: 'A',
-            transactionId,
             dataCadastro: new Date(),
         });
 

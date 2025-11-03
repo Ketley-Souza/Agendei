@@ -30,15 +30,15 @@ const util = {
     formatarDuracao: (minutos) => {
         //Verifica sintaxe
         if (!minutos || minutos === 0) return '0min';
-        
+
         //Convertendo para número se for string
         const mins = typeof minutos === 'string' ? parseInt(minutos) : minutos;
-        
+
         if (isNaN(mins)) return minutos;
-        
+
         const horas = Math.floor(mins / 60);
         const minutosRestantes = mins % 60;
-        
+
         if (horas > 0 && minutosRestantes > 0) {
             return `${horas}h${minutosRestantes.toString().padStart(2, '0')}min`;
         } else if (horas > 0) {
@@ -52,19 +52,29 @@ const util = {
     duracaoParaMinutos: (duracaoStr) => {
         if (!duracaoStr) return 0;
         if (typeof duracaoStr === 'number') return duracaoStr;
-        
+
         const str = duracaoStr.toString().toLowerCase();
-        if (/^\d+$/.test(str)) {
-            return parseInt(str);
-        }
-        const match = str.match(/(?:(\d+)h)?(?:(\d+)(?:min)?)?/);
-        
+        const match = str.match(/(?:(\d+)h)?\s*(?:(\d+)min)?/);
+
         if (!match) return 0;
-        
+
         const horas = parseInt(match[1] || 0);
         const minutos = parseInt(match[2] || 0);
-        
+
         return horas * 60 + minutos;
+    },
+
+    //Calcula duração total dos serviços
+    calcularDuracaoTotal: (servicoPrincipal, servicosAdicionais = []) => {
+        let duracaoTotal = util.duracaoParaMinutos(servicoPrincipal?.duracao || 0);
+
+        if (servicosAdicionais && Array.isArray(servicosAdicionais)) {
+            servicosAdicionais.forEach(servico => {
+                duracaoTotal += util.duracaoParaMinutos(servico?.duracao || 0);
+            });
+        }
+
+        return duracaoTotal;
     },
 };
 

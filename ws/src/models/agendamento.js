@@ -40,10 +40,6 @@ const agendamento = new Schema({
     required: true,
     default: 'A',
   },
-  transactionId: {
-    type: String,
-    required: true,
-  },
   dataCadastro: {
     type: Date,
     default: Date.now,
