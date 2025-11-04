@@ -6,9 +6,9 @@ import {
     updateCliente,
     unlinkCliente,
     resetCliente,
-} from '../../store/slices/clienteSlice';
-import util from '../../services/util';
-import TableComponent from '../../components/Table';
+} from '../../../store/slices/clienteSlice';
+import util from '../../../services/util';
+import TableComponent from '../../../components/Table';
 import {
     Drawer,
     Modal,

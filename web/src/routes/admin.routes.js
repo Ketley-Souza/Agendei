@@ -1,18 +1,17 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import "./styles.css";
+import "../styles.css";
 
 // Componentes
-import Sidebar from "./components/Sidebar";
+import Sidebar from "../components/Sidebar";
 
 // Páginas
-import Agendamentos from "./pages/Agendamentos";
-import Clientes from "./pages/Clientes";
-import Colaboradores from "./pages/Colaboradores";
-import Servicos from "./pages/Servicos";
-import HorariosAtendimento from "./pages/HorariosAtendimento";
-import Agendamento from "./pages/Agendamento";
+import Agendamentos from "../pages/Admin/Agendamentos";
+import Clientes from "../pages/Admin/Clientes";
+import Colaboradores from "../pages/Admin/Colaboradores";
+import Servicos from "../pages/Admin/Servicos";
+import HorariosAtendimento from "../pages/Admin/HorariosAtendimento";
 
-const SiteRoutes = () => {
+const AdminRoutes = () => {
   return (
     <Router>
       <div className="container-fluid h-100">
@@ -32,7 +31,6 @@ const SiteRoutes = () => {
               <Route path="/colaboradores" element={<Colaboradores />} />
               <Route path="/servicos" element={<Servicos />} />
               <Route path="/horarios-atendimento" element={<HorariosAtendimento />} />
-              <Route path="/agendamento" element={<Agendamento />} />
 
               {/* Página não encontrada */}
               <Route path="*" element={<h2 className="p-4">Página não encontrada</h2>} />
@@ -44,4 +42,4 @@ const SiteRoutes = () => {
   );
 };
 
-export default SiteRoutes;
+export default AdminRoutes;

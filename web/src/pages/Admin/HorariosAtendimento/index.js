@@ -21,7 +21,7 @@ import {
   removeHorario,
   allServicos,
   filterColaboradores,
-} from "../../store/slices/horarioSlice";
+} from "../../../store/slices/horarioSlice";
 
 const locales = { "pt-BR": ptBR };
 const localizer = dateFnsLocalizer({

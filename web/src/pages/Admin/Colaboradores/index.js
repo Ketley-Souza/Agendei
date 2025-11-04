@@ -8,9 +8,9 @@ import {
     unlinkColaborador,
     resetColaborador,
     allServicos,
-} from '../../store/slices/colaboradorSlice';
-import util from '../../services/util';
-import TableComponent from '../../components/Table';
+} from '../../../store/slices/colaboradorSlice';
+import util from '../../../services/util';
+import TableComponent from '../../../components/Table';
 import {
     Drawer,
     Modal,

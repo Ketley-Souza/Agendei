@@ -7,9 +7,9 @@ import {
     updateServico,
     deleteServico,
     resetServico,
-} from '../../store/slices/servicoSlice';
-import util from '../../services/util';
-import TableComponent from '../../components/Table';
+} from '../../../store/slices/servicoSlice';
+import util from '../../../services/util';
+import TableComponent from '../../../components/Table';
 import {
     Drawer,
     Modal,

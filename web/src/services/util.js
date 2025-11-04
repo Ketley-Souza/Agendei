@@ -28,23 +28,17 @@ const util = {
 
     //Formatando duração
     formatarDuracao: (minutos) => {
-        //Verifica sintaxe
         if (!minutos || minutos === 0) return '0min';
 
-        //Convertendo para número se for string
-        const mins = typeof minutos === 'string' ? parseInt(minutos) : minutos;
+        const horas = Math.floor(minutos / 60);
+        const mins = minutos % 60;
 
-        if (isNaN(mins)) return minutos;
-
-        const horas = Math.floor(mins / 60);
-        const minutosRestantes = mins % 60;
-
-        if (horas > 0 && minutosRestantes > 0) {
-            return `${horas}h${minutosRestantes.toString().padStart(2, '0')}min`;
+        if (horas > 0 && mins > 0) {
+            return `${horas}h${mins.toString().padStart(2, '0')}min`;
         } else if (horas > 0) {
             return `${horas}h00min`;
         } else {
-            return `${minutosRestantes}min`;
+            return `${mins}min`;
         }
     },
 
