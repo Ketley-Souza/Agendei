@@ -20,6 +20,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.set('port', 8000);
 
 /* ROTAS */
+app.use('/auth', require('./src/routes/auth.routes'));
 app.use('/agendamento', require('./src/routes/agendamento.routes'));
 app.use('/cliente', require('./src/routes/cliente.routes'));
 app.use('/colaborador', require('./src/routes/colaborador.routes'));
