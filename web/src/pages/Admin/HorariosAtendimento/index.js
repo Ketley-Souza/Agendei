@@ -1,3 +1,4 @@
+//horario
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
@@ -79,8 +80,6 @@ const HorariosAtendimento = () => {
         ? localHorario.especialidades
         : [];
 
-    console.log("[DEBUG] trigger buscar colaboradores -> servicosArray =", servicosArray);
-
     if (servicosArray.length === 0) {
       setLocalColaboradores([]);
       return;
@@ -89,10 +88,8 @@ const HorariosAtendimento = () => {
     let mounted = true;
     setColabLoading(true);
 
-    // tenta usar o thunk do slice; se falhar/retornar vazio, faz fetch direto (fallback)
     dispatch(filterColaboradores({ servicos: servicosArray }))
       .then((res) => {
-        console.log("[DEBUG] filterColaboradores raw response ->", res);
         const payload = res && (res.payload || res.data || res);
         let list = [];
 
@@ -119,15 +116,12 @@ const HorariosAtendimento = () => {
               return { value: c.value ?? c._id ?? c.id ?? String(c), label: c.label ?? c.nome ?? String(c), _id: c._id ?? c.id ?? c.value, nome: c.nome ?? c.label ?? String(c) };
             })
             .filter(Boolean);
-          console.log("[DEBUG] colaboradores normalizados (via thunk) ->", normalized);
           if (mounted) setLocalColaboradores(normalized);
         } else {
-          console.warn("[DEBUG] thunk retornou vazio -> fallback para fetch direto");
           throw new Error("thunk-empty");
         }
       })
       .catch(async (err) => {
-        console.warn("[DEBUG] thunk falhou ou retornou vazio:", err);
         try {
           const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
           const resp = await fetch(`${API}/horario/colaboradores`, {
@@ -137,13 +131,7 @@ const HorariosAtendimento = () => {
           });
           const text = await resp.text();
           let data;
-          try {
-            data = JSON.parse(text);
-          } catch {
-            data = text;
-          }
-
-          console.log("[DEBUG] fallback fetch raw response ->", resp.status, data);
+          try { data = JSON.parse(text); } catch { data = text; }
 
           let list = [];
           if (Array.isArray(data)) list = data;
@@ -160,8 +148,6 @@ const HorariosAtendimento = () => {
             })
             .filter(Boolean);
 
-          console.log("[DEBUG] colaboradores normalizados (via fetch fallback) ->", normalized);
-
           if (mounted) {
             if (normalized.length > 0) setLocalColaboradores(normalized);
             else if (Array.isArray(colaboradores) && colaboradores.length > 0) {
@@ -177,7 +163,6 @@ const HorariosAtendimento = () => {
             }
           }
         } catch (fetchErr) {
-          console.error("[DEBUG] fetch fallback falhou:", fetchErr);
           if (mounted) setLocalColaboradores([]);
         }
       })
@@ -185,9 +170,7 @@ const HorariosAtendimento = () => {
         if (mounted) setColabLoading(false);
       });
 
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [dispatch, localHorario.especialidades, colaboradores]);
 
   const setHorarioKey = (key, value) =>
@@ -201,135 +184,94 @@ const HorariosAtendimento = () => {
 
   // montar eventos a partir do array `horarios`
   const formatEventos = useMemo(() => {
-  const listaEventos = [];
+    const listaEventos = [];
 
-  console.log('[DEBUG] formatEventos: iniciando montagem de eventos (horarios length =', (horarios || []).length, ')');
+    (horarios || []).forEach((hor, index) => {
+      const diasArray = Array.isArray(hor.dias)
+        ? hor.dias
+        : (hor.dias !== undefined && hor.dias !== null)
+        ? [hor.dias]
+        : [];
 
-  (horarios || []).forEach((hor, index) => {
-    console.log('[DEBUG] formato cru do horario ->', hor);
+      if (!diasArray.length) return;
 
-    // garantir array de dias
-    const diasArray = Array.isArray(hor.dias)
-      ? hor.dias
-      : (hor.dias !== undefined && hor.dias !== null)
-      ? [hor.dias]
-      : [];
+      diasArray.forEach((diaRaw) => {
+        const dia = Number(diaRaw);
+        if (!Number.isFinite(dia) || dia < 0 || dia > 6) return;
 
-    if (!diasArray.length) {
-      console.warn('[DEBUG] horario sem dias, pulando ->', hor._id ?? hor.id);
-      return;
-    }
+        const tryParseHHmm = (s) => {
+          if (typeof s !== 'string') return null;
+          if (!/^\s*\d{1,2}:\d{2}\s*$/.test(s)) return null;
+          try { return parse(s.trim(), 'HH:mm', new Date()); } catch { return null; }
+        };
 
-    diasArray.forEach((diaRaw) => {
-      const dia = Number(diaRaw);
-      if (!Number.isFinite(dia) || dia < 0 || dia > 6) {
-        console.warn('[DEBUG] dia inválido, pulando ->', diaRaw, 'no horario', hor._id ?? hor.id);
-        return;
-      }
-
-      // --------- Parse inicio/fim robusto ----------
-      let inicioDate = null;
-      let fimDate = null;
-
-      // caso 1: string no formato "HH:mm"
-      const tryParseHHmm = (s) => {
-        if (typeof s !== 'string') return null;
-        if (!/^\s*\d{1,2}:\d{2}\s*$/.test(s)) return null;
-        try {
-          return parse(s.trim(), 'HH:mm', new Date());
-        } catch {
+        const tryParseISOorDate = (v) => {
+          try {
+            if (v instanceof Date && !isNaN(v)) return v;
+            if (typeof v === 'number') {
+              const d = new Date(v);
+              return isValidDate(d) ? d : null;
+            }
+            if (typeof v === 'string') {
+              const d = new Date(v);
+              if (isValidDate(d)) return d;
+            }
+          } catch (e) { }
           return null;
-        }
-      };
+        };
 
-      // caso 2: ISO / timestamp / Date
-      const tryParseISOorDate = (v) => {
-        try {
-          if (v instanceof Date && !isNaN(v)) return v;
-          if (typeof v === 'number') {
-            const d = new Date(v);
-            return isValidDate(d) ? d : null;
-          }
-          if (typeof v === 'string') {
-            // tenta Date.parse (ISO)
-            const d = new Date(v);
-            if (isValidDate(d)) return d;
-          }
-        } catch (e) { /* ignore */ }
-        return null;
-      };
+        const inicioDate = tryParseHHmm(hor.inicio) || tryParseISOorDate(hor.inicio);
+        const fimDate = tryParseHHmm(hor.fim) || tryParseISOorDate(hor.fim);
 
-      inicioDate = tryParseHHmm(hor.inicio) || tryParseISOorDate(hor.inicio);
-      fimDate = tryParseHHmm(hor.fim) || tryParseISOorDate(hor.fim);
+        if (!inicioDate || !fimDate) return;
 
-      if (!inicioDate || !fimDate) {
-        console.warn('[DEBUG] inicio/fim não parseáveis, pulando evento ->', { inicio: hor.inicio, fim: hor.fim, id: hor._id ?? hor.id });
-        return;
-      }
+        const baseDate = Array.isArray(diasSemanaData) && diasSemanaData[dia]
+          ? diasSemanaData[dia]
+          : (() => { const start = startOfWeekFn(new Date(), { weekStartsOn: 0 }); return addDays(start, dia); })();
 
-      // construir start/end no dia correto (usa diasSemanaData que você já tem)
-      // se diasSemanaData não existir no escopo, recompute com startOfWeek (veja seu código)
-      const baseDate = Array.isArray(diasSemanaData) && diasSemanaData[dia]
-        ? diasSemanaData[dia]
-        : (() => {
-            const start = startOfWeekFn(new Date(), { weekStartsOn: 0 });
-            return addDays(start, dia);
-          })();
+        const start = setDateParts(baseDate, {
+          hours: getHours(inicioDate),
+          minutes: getMinutes(inicioDate),
+          seconds: 0,
+          milliseconds: 0,
+        });
+        const end = setDateParts(baseDate, {
+          hours: getHours(fimDate),
+          minutes: getMinutes(fimDate),
+          seconds: 0,
+          milliseconds: 0,
+        });
 
-      const start = setDateParts(baseDate, {
-        hours: getHours(inicioDate),
-        minutes: getMinutes(inicioDate),
-        seconds: 0,
-        milliseconds: 0,
+        if (!(isValidDate(start) && isValidDate(end) && end > start)) return;
+
+        const nomesColab = (hor.colaboradores || []).map((id) => {
+          const x = (localColaboradores || []).find((c) => String(c.value) === String(id) || String(c._id) === String(id));
+          if (x) return x.label ?? x.nome ?? '';
+          const y = (colaboradores || []).find((c) => String(c._id) === String(id) || String(c.value) === String(id));
+          return y ? (y.label ?? y.nome ?? '') : '';
+        }).filter(Boolean);
+
+        const nomesServ = (hor.especialidades || []).map((id) => {
+          const s = (servicos || []).find((sv) => String(sv._id) === String(id) || String(sv.value) === String(id));
+          return s ? (s.label ?? s.nome ?? '') : '';
+        }).filter(Boolean);
+
+        const title = `${nomesServ.join(', ') || 'Serviço'} — ${nomesColab.join(', ') || 'Sem colaborador'}`;
+
+        listaEventos.push({
+          resource: { horario: hor, backgroundColor: getColor(index) },
+          title,
+          start,
+          end,
+        });
       });
-      const end = setDateParts(baseDate, {
-        hours: getHours(fimDate),
-        minutes: getMinutes(fimDate),
-        seconds: 0,
-        milliseconds: 0,
-      });
-
-      if (!(isValidDate(start) && isValidDate(end) && end > start)) {
-        console.warn('[DEBUG] start/end inválido ou end <= start, pulando ->', { start, end, id: hor._id ?? hor.id });
-        return;
-      }
-
-      // montar título (tenta pegar nomes das listas locais/slice)
-      const nomesColab = (hor.colaboradores || []).map((id) => {
-        const x = (localColaboradores || []).find((c) => String(c.value) === String(id) || String(c._id) === String(id));
-        if (x) return x.label ?? x.nome ?? '';
-        const y = (colaboradores || []).find((c) => String(c._id) === String(id) || String(c.value) === String(id));
-        return y ? (y.label ?? y.nome ?? '') : '';
-      }).filter(Boolean);
-
-      const nomesServ = (hor.especialidades || []).map((id) => {
-        const s = (servicos || []).find((sv) => String(sv._id) === String(id) || String(sv.value) === String(id));
-        return s ? (s.label ?? s.nome ?? '') : '';
-      }).filter(Boolean);
-
-      const title = `${nomesServ.join(', ') || 'Serviço'} — ${nomesColab.join(', ') || 'Sem colaborador'}`;
-
-      listaEventos.push({
-        resource: { horario: hor, backgroundColor: getColor(index) },
-        title,
-        start,
-        end,
-      });
-
-      console.log('[DEBUG] evento adicionado ->', { id: hor._id ?? hor.id, dia, start, end, title });
     });
-  });
 
-  console.log('[DEBUG] listaEventos final ->', listaEventos.length, listaEventos);
-  return listaEventos;
-}, [horarios, servicos, colaboradores, localColaboradores, diasSemanaData]);
+    return listaEventos;
+  }, [horarios, servicos, colaboradores, localColaboradores, diasSemanaData]);
 
   const formatTime = (d) => {
-    try {
-      return format(new Date(d), "HH:mm");
-    } catch {
-      return String(d || "");
-    }
+    try { return format(new Date(d), "HH:mm"); } catch { return String(d || ""); }
   };
 
   const openNew = () => {
@@ -376,7 +318,6 @@ const HorariosAtendimento = () => {
       setToast({ type: "success", text: "Horário criado com sucesso!" });
       setDrawerOpen(false);
     } catch (err) {
-      console.error("Erro ao salvar horário:", err);
       setToast({ type: "error", text: "Erro ao salvar horário." });
     }
   };
@@ -394,7 +335,6 @@ const HorariosAtendimento = () => {
       setConfirmOpen(false);
       setDrawerOpen(false);
     } catch (err) {
-      console.error("Erro ao remover:", err);
       setToast({ type: "error", text: "Erro ao remover horário." });
     }
   };
@@ -412,15 +352,7 @@ const HorariosAtendimento = () => {
       </div>
 
       {toast && (
-        <div
-          className={`mb-4 p-3 rounded ${
-            toast.type === "success"
-              ? "bg-green-100 text-green-800"
-              : toast.type === "error"
-              ? "bg-red-100 text-red-800"
-              : "bg-yellow-100 text-yellow-800"
-          }`}
-        >
+        <div className={`mb-4 p-3 rounded ${toast.type === "success" ? "bg-green-100 text-green-800" : toast.type === "error" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"}`}>
           {toast.text}
         </div>
       )}
@@ -459,105 +391,81 @@ const HorariosAtendimento = () => {
           defaultView="week"
           views={["week"]}
           style={{ height: 600 }}
+          toolbar={false}              /* remove os botões anterior/próximo */
+          culture="pt-BR"              /* força uso do locale pt-BR */
+          messages={{                 /* textos do calendário em português */
+            week: 'Semana',
+            work_week: 'Semana útil',
+            day: 'Dia',
+            month: 'Mês',
+            previous: 'Anterior',
+            next: 'Próximo',
+            today: 'Hoje',
+            agenda: 'Agenda',
+            date: 'Data',
+            time: 'Hora',
+            event: 'Evento',
+            allDay: 'Dia inteiro',
+            showMore: (total) => `+${total} mais`,
+          }}
+          formats={{                   /* formata os nomes do cabeçalho curto em pt */
+            dayFormat: (date, culture, localizerFn) =>
+              localizerFn.format(date, 'EEE', culture).replace(/^\w/, (c) => c.toUpperCase()),
+            weekdayFormat: (date, culture, localizerFn) =>
+              localizerFn.format(date, 'EEE', culture).replace(/^\w/, (c) => c.toUpperCase()),
+            timeGutterFormat: (date) => format(date, 'HH:mm', { locale: ptBR }),
+            eventTimeRangeFormat: ({ start, end }) =>
+              `${format(start, 'HH:mm', { locale: ptBR })} - ${format(end, 'HH:mm', { locale: ptBR })}`,
+          }}
         />
       </div>
 
+      {/* (resto do drawer/dialogs iguais ao seu código anterior — mantive) */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-40"
-            onClick={() => setDrawerOpen(false)}
-          />
+          <div className="fixed inset-0 bg-black bg-opacity-40 z-40" onClick={() => setDrawerOpen(false)} />
           <div className="ml-auto w-full md:w-2/5 bg-white h-full shadow-xl p-6 overflow-auto z-50">
-            <h3 className="text-lg font-semibold mb-4">
-              {localHorario && (localHorario._id || localHorario.id) ? "Editar horário" : "Novo horário"}
-            </h3>
+            <h3 className="text-lg font-semibold mb-4">{localHorario && (localHorario._id || localHorario.id) ? "Editar horário" : "Novo horário"}</h3>
 
-            {/* Dia */}
             <div className="mb-3">
               <label className="block font-medium mb-1">Dia da semana</label>
-              <select
-                value={localHorario.dias && localHorario.dias.length > 0 ? String(localHorario.dias[0]) : ""}
-                onChange={(e) => setHorarioKey("dias", [parseInt(e.target.value, 10)])}
-                className="border rounded w-full p-2"
-              >
+              <select value={localHorario.dias && localHorario.dias.length > 0 ? String(localHorario.dias[0]) : ""} onChange={(e) => setHorarioKey("dias", [parseInt(e.target.value, 10)])} className="border rounded w-full p-2">
                 <option value="">Selecione</option>
-                {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((d, i) => (
-                  <option key={i} value={i}>
-                    {d}
-                  </option>
-                ))}
+                {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((d, i) => (<option key={i} value={i}>{d}</option>))}
               </select>
             </div>
 
-            {/* Horários */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block font-medium mb-1">Início</label>
-                <input
-                  type="time"
-                  value={localHorario.inicio}
-                  onChange={(e) => setHorarioKey("inicio", e.target.value)}
-                  className="border rounded w-full p-2"
-                />
+                <input type="time" value={localHorario.inicio} onChange={(e) => setHorarioKey("inicio", e.target.value)} className="border rounded w-full p-2" />
               </div>
               <div>
                 <label className="block font-medium mb-1">Fim</label>
-                <input
-                  type="time"
-                  value={localHorario.fim}
-                  onChange={(e) => setHorarioKey("fim", e.target.value)}
-                  className="border rounded w-full p-2"
-                />
+                <input type="time" value={localHorario.fim} onChange={(e) => setHorarioKey("fim", e.target.value)} className="border rounded w-full p-2" />
               </div>
             </div>
 
-            {/* Especialidade */}
             <div className="mt-3">
               <label className="block font-medium mb-1">Especialidade</label>
-              <select
-                value={localHorario.especialidades && localHorario.especialidades.length > 0 ? String(localHorario.especialidades[0]) : ""}
-                onChange={(e) => setHorarioKey("especialidades", e.target.value ? [e.target.value] : [])}
-                className="border rounded w-full p-2"
-              >
+              <select value={localHorario.especialidades && localHorario.especialidades.length > 0 ? String(localHorario.especialidades[0]) : ""} onChange={(e) => setHorarioKey("especialidades", e.target.value ? [e.target.value] : [])} className="border rounded w-full p-2">
                 <option value="">Selecione</option>
-                {(servicos || []).map((s) => (
-                  <option key={s._id ?? s.value ?? s.id} value={s._id ?? s.value ?? s.id}>
-                    {s.label ?? s.nome ?? s.titulo}
-                  </option>
-                ))}
+                {(servicos || []).map((s) => (<option key={s._id ?? s.value ?? s.id} value={s._id ?? s.value ?? s.id}>{s.label ?? s.nome ?? s.titulo}</option>))}
               </select>
             </div>
 
-            {/* Colaborador */}
             <div className="mt-3">
               <label className="block font-medium mb-1">Colaborador</label>
-              <select
-                value={localHorario.colaboradores && localHorario.colaboradores.length > 0 ? String(localHorario.colaboradores[0]) : ""}
-                onChange={(e) => setHorarioKey("colaboradores", e.target.value ? [e.target.value] : [])}
-                className="border rounded w-full p-2"
-                disabled={colabLoading}
-              >
+              <select value={localHorario.colaboradores && localHorario.colaboradores.length > 0 ? String(localHorario.colaboradores[0]) : ""} onChange={(e) => setHorarioKey("colaboradores", e.target.value ? [e.target.value] : [])} className="border rounded w-full p-2" disabled={colabLoading}>
                 <option value="">{colabLoading ? "Carregando..." : "Selecione"}</option>
                 {!colabLoading && localColaboradores.length === 0 && <option value="" disabled>Nenhum colaborador disponível</option>}
-                {(localColaboradores || []).map((c) => (
-                  <option key={c.value ?? c._id ?? c.id} value={c.value ?? c._id ?? c.id}>
-                    {c.label ?? c.nome ?? (c.colaboradorId && c.colaboradorId.nome) ?? String(c)}
-                  </option>
-                ))}
+                {(localColaboradores || []).map((c) => (<option key={c.value ?? c._id ?? c.id} value={c.value ?? c._id ?? c.id}>{c.label ?? c.nome ?? String(c)}</option>))}
               </select>
             </div>
 
             <div className="mt-6 space-y-2">
-              <button onClick={save} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
-                {localHorario && (localHorario._id || localHorario.id) ? "Salvar alterações" : "Criar horário"}
-              </button>
-
-              {(localHorario && (localHorario._id || localHorario.id)) && (
-                <button onClick={() => setConfirmOpen(true)} className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">
-                  Excluir horário
-                </button>
-              )}
+              <button onClick={save} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">{localHorario && (localHorario._id || localHorario.id) ? "Salvar alterações" : "Criar horário"}</button>
+              {(localHorario && (localHorario._id || localHorario.id)) && (<button onClick={() => setConfirmOpen(true)} className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">Excluir horário</button>)}
             </div>
           </div>
         </div>
