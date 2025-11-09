@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Agendamento from "../pages/Cliente/Agendamento";
 import Agenda from "../pages/Cliente/Agenda";
+import Login from "../pages/Cliente/Login";
+import Cadastro from "../pages/Cliente/Cadastro";
 import "../styles.css";
 
 const ClienteRoutes = () => {
@@ -13,6 +15,8 @@ const ClienteRoutes = () => {
                             {/* Redireciona "/" para "/agendamento" */}
                             <Route path="/" element={<Navigate to="/agendamento" />} />
 
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/cadastro" element={<Cadastro />} />
                             <Route path="/agendamento" element={<Agendamento />} />
                             <Route path="/agenda" element={<Agenda />} />
                             <Route path="*" element={<h2 className="p-4">Página não encontrada</h2>} />
