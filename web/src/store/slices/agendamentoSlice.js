@@ -2,8 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 import consts from '../../consts';
 
-
-//  Thunk para buscar agendamentos (substitui saga)
+// Thunk para buscar agendamentos (substitui saga)
 export const filterAgendamentos = createAsyncThunk(
     'agendamento/filterAgendamentos',
     async (range, { rejectWithValue }) => {
@@ -32,12 +31,21 @@ const agendamentoSlice = createSlice({
         },
         agendamento: {},
         agendamentos: [],
+        servicoSelecionado: null, // 👈 novo campo aqui
         status: 'idle', // idle | loading | succeeded | failed
         error: null,
     },
     reducers: {
         updateAgendamento: (state, action) => {
             Object.assign(state, action.payload);
+        },
+
+        // 👇 novos reducers para o fluxo da Home -> Agendamento
+        setServicoSelecionado: (state, action) => {
+            state.servicoSelecionado = action.payload;
+        },
+        limparServicoSelecionado: (state) => {
+            state.servicoSelecionado = null;
         },
     },
     extraReducers: (builder) => {
@@ -56,5 +64,10 @@ const agendamentoSlice = createSlice({
     },
 });
 
-export const { updateAgendamento } = agendamentoSlice.actions;
+export const {
+    updateAgendamento,
+    setServicoSelecionado,
+    limparServicoSelecionado,
+} = agendamentoSlice.actions;
+
 export default agendamentoSlice.reducer;

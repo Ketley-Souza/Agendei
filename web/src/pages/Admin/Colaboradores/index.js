@@ -207,7 +207,7 @@ const Colaboradores = () => {
 
             {/* Cabeçalho */}
             <div className="flex justify-between items-center mb-10">
-                <h2 className="font-mono text-2xl font-semibold">Colaboradores</h2>
+                <h2 className="text-2xl font-catamaran  font-semibold">Colaboradores</h2>
                 <button
                     onClick={() => {
                         dispatch(resetColaborador());

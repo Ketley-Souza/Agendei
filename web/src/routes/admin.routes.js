@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import "../styles.css";
+// styles.css is imported globally in src/index.js
 
 // Componentes
 import Sidebar from "../components/Sidebar";

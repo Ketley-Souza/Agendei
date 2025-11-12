@@ -140,13 +140,13 @@ const Agendamentos = () => {
     <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
       {/* ===== Cabeçalho ===== */}
       <div className="flex justify-center items-center mb-6">
-        <h2 className="text-xl fint-sans font-semibold text-[#2c2c2c]">
+        <h2 className="text-2xl font-catamaran font-semibold text-[#2c2c2c]">
           Agendamentos
         </h2>
       </div>
 
       {/* ===== Calendário ===== */}
-      <div className="overflow-hidden">
+      <div className="overflow-hidden font-catamaran ">
         <Calendar
           localizer={localizer}
           events={formatEventos()}

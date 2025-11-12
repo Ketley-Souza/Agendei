@@ -3,7 +3,7 @@ import Agendamento from "../pages/Cliente/Agendamento";
 import Agenda from "../pages/Cliente/Agenda";
 import Login from "../pages/Cliente/Login";
 import Cadastro from "../pages/Cliente/Cadastro";
-import "../styles.css";
+import Home from "../pages/Cliente/Home";
 
 const ClienteRoutes = () => {
     return (
@@ -17,6 +17,7 @@ const ClienteRoutes = () => {
 
                             <Route path="/login" element={<Login />} />
                             <Route path="/cadastro" element={<Cadastro />} />
+                            <Route path="/home" element={<Home />} />
                             <Route path="/agendamento" element={<Agendamento />} />
                             <Route path="/agenda" element={<Agenda />} />
                             <Route path="*" element={<h2 className="p-4">Página não encontrada</h2>} />

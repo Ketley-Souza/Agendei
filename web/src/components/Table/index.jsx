@@ -32,7 +32,7 @@ const TableComponent = ({ rows, onRowClick, config, actions, loading }) => {
     };
 
     return (
-        <div className="rounded-2xl overflow-hidden border border-gray-300 ">
+        <div className="rounded-2xl overflow-hidden border border-gray-300 font-opensans ">
             <Table
                 height={400}
                 data={data}

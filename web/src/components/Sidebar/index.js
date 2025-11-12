@@ -24,7 +24,7 @@ export default function Sidebar() {
         <aside
             onMouseEnter={() => setOpen(true)}
             onMouseLeave={() => setOpen(false)}
-            className={`font-mono bg-[#0d1117] text-[#c9d1d9] h-screen flex flex-col 
+            className={`font-catamaran  bg-[#0d1117] text-[#c9d1d9] h-screen flex flex-col 
                 p-4 border-r border-[#30363d] transition-all duration-300 ease-in-out
                 ${open ? "w-64" : "w-24"}`}
         >

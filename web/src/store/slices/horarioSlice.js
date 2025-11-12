@@ -190,7 +190,7 @@ export const filterColaboradores = createAsyncThunk(
     }
 );
 
-// 🔹 SLICE PRINCIPAL
+//  SLICE PRINCIPAL
 const horarioSlice = createSlice({
     name: 'horario',
     initialState: INITIAL_STATE,

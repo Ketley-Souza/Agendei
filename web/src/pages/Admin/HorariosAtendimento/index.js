@@ -190,8 +190,8 @@ const HorariosAtendimento = () => {
       const diasArray = Array.isArray(hor.dias)
         ? hor.dias
         : (hor.dias !== undefined && hor.dias !== null)
-        ? [hor.dias]
-        : [];
+          ? [hor.dias]
+          : [];
 
       if (!diasArray.length) return;
 
@@ -340,9 +340,9 @@ const HorariosAtendimento = () => {
   };
 
   return (
-    <div className="p-5 overflow-auto h-full">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">Horários de atendimento</h2>
+    <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
+      <div className="flex justify-between items-center mb-10">
+        <h2 className="text-2xl font-catamaran font-semibold">Horários de atendimento</h2>
         <button
           onClick={openNew}
           className="bg-[#CDA327] text-white px-4 py-2 rounded-lg hover:bg-[#b58e22]"
@@ -431,7 +431,7 @@ const HorariosAtendimento = () => {
               <label className="block font-medium mb-1">Dia da semana</label>
               <select value={localHorario.dias && localHorario.dias.length > 0 ? String(localHorario.dias[0]) : ""} onChange={(e) => setHorarioKey("dias", [parseInt(e.target.value, 10)])} className="border rounded w-full p-2">
                 <option value="">Selecione</option>
-                {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((d, i) => (<option key={i} value={i}>{d}</option>))}
+                {["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"].map((d, i) => (<option key={i} value={i}>{d}</option>))}
               </select>
             </div>
 

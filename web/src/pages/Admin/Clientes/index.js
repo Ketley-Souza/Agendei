@@ -96,7 +96,7 @@ const Clientes = () => {
 
             {/* Cabeçalho */}
             <div className="flex justify-between items-center mb-10">
-                <h2 className="font-mono text-2xl font-semibold">Clientes</h2>
+                <h2 className="text-2xl font-catamaran font-semibold">Clientes</h2>
                 <button
                     onClick={() => {
                         dispatch(resetCliente());
