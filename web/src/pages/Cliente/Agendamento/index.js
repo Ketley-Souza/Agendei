@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { Calendar, User } from "lucide-react"; // 👈 ícones
 import DrawerServicos from "../../../components/DrawerServicos";
 import api, { urlImagem } from "../../../services/api";
 import CONSTS from "../../../consts";
@@ -18,9 +19,10 @@ const Agendamento = () => {
   const [servicos, setServicos] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [servicosSelecionados, setServicosSelecionados] = useState([]);
-  const [dataSelecionada, setDataSelecionada] = useState(""); // conterá data + hora
+  const [dataSelecionada, setDataSelecionada] = useState("");
   const [especialistaSelecionado, setEspecialistaSelecionado] = useState(null);
   const [especialistas, setEspecialistas] = useState([]);
+  const [horaSelecionada, setHoraSelecionada] = useState("");
 
   // Buscar dados do backend
   useEffect(() => {
@@ -46,7 +48,7 @@ const Agendamento = () => {
     buscarEspecialistas();
   }, []);
 
-  // Se vier da Home
+  // Se veio da Home
   useEffect(() => {
     if (servicoPreSelecionado) {
       setServicosSelecionados([servicoPreSelecionado]);
@@ -55,24 +57,22 @@ const Agendamento = () => {
     }
   }, [servicoPreSelecionado, dispatch]);
 
-  // Confirmar serviços
   const handleSelectServico = (selecionados) => {
     setServicosSelecionados(selecionados);
     setDrawerOpen(false);
   };
 
-  // Clicar em horário → junta com data
   const handleSelectHora = (hora) => {
     if (!dataSelecionada) {
       alert("Selecione a data antes do horário!");
       return;
     }
 
+    setHoraSelecionada(hora);
     const dataComHora = `${dataSelecionada}T${hora}:00`;
     setDataSelecionada(dataComHora);
   };
 
-  // Criar agendamento
   const handleAgendar = async () => {
     if (!servicosSelecionados.length) {
       alert("Selecione pelo menos um serviço");
@@ -110,86 +110,206 @@ const Agendamento = () => {
   };
 
   return (
-    <div className="relative h-screen bg-gray-50 flex flex-col items-center justify-start pt-6">
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md mb-6 font-catamaran">
-        <h2 className="text-2xl font-semibold mb-2 text-center">
+    <div
+      style={{
+        background: "#f9f9f9",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        paddingTop: "40px",
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: "16px",
+          border: "1px solid #e0e0e0",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          padding: "2rem",
+          width: "100%",
+          maxWidth: "420px",
+          fontFamily: "'Inter', sans-serif",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "1.6rem",
+            fontWeight: 600,
+            textAlign: "center",
+            marginBottom: "0.5rem",
+            color: "#1f1f1f",
+          }}
+        >
           Agende um atendimento
         </h2>
-        <p className="text-gray-500 text-center mb-6">
-          Selecione data, horário e profissional para criar o agendamento
+        <p
+          style={{
+            textAlign: "center",
+            color: "#6b6b6b",
+            marginBottom: "1.5rem",
+            fontSize: "0.95rem",
+          }}
+        >
+          Selecione data, horário e profissional
         </p>
 
-        {/* Serviços selecionados */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium mb-2">Serviços Selecionados</h3>
+        {/* Serviços */}
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ display: "block", fontWeight: 500, marginBottom: "6px" }}>
+            Serviços
+          </label>
           {servicosSelecionados.length > 0 ? (
-            <ul className="space-y-3">
-              {servicosSelecionados.map((s, index) => (
-                <li
-                  key={s._id}
-                  className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={s.imagem ? urlImagem(s.imagem) : "https://via.placeholder.com/50"}
-                      alt={s.nomeServico}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
-
-                    <div>
-                      <p className="font-semibold text-gray-800">
-                        {index === 0 ? "Principal: " : "Adicional: "}
-                        {s.nomeServico}
-                      </p>
-                      <p className="text-sm text-gray-500">R$ {s.preco}</p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: "10px",
+                padding: "10px",
+                background: "#fafafa",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <img
+                src={
+                  servicosSelecionados[0].imagem
+                    ? urlImagem(servicosSelecionados[0].imagem)
+                    : "https://via.placeholder.com/50"
+                }
+                alt={servicosSelecionados[0].nomeServico}
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  borderRadius: "8px",
+                  objectFit: "cover",
+                }}
+              />
+              <div>
+                <p style={{ fontWeight: 600, color: "#333", marginBottom: 2 }}>
+                  {servicosSelecionados[0].nomeServico}
+                </p>
+                <p style={{ color: "#777", fontSize: "0.9rem" }}>
+                  Total R$ {servicosSelecionados[0].preco}
+                </p>
+              </div>
+            </div>
           ) : (
-            <p className="text-gray-500">Nenhum serviço selecionado</p>
+            <div
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: "10px",
+                padding: "10px",
+                background: "#fafafa",
+                color: "#777",
+              }}
+            >
+              Nenhum serviço selecionado
+            </div>
           )}
         </div>
 
         {/* Data */}
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-1">Data</label>
-          <CalendarioPopover onSelect={setDataSelecionada} />
-        </div>
-
-        {/* Horários */}
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-1">Horários</label>
-          <div className="grid grid-cols-4 gap-2">
-            {["09:00", "10:00", "11:00", "12:00", "19:00", "20:00", "21:00"].map(
-              (hora) => (
-                <button
-                  key={hora}
-                  onClick={() => handleSelectHora(hora)}
-                  className="border rounded-lg py-2 hover:bg-yellow-500 hover:text-white transition"
-                >
-                  {hora}
-                </button>
-              )
-            )}
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ fontWeight: 500, display: "block", marginBottom: "6px" }}>
+            Data
+          </label>
+          <div
+            style={{
+              border: "1px solid #ccc",
+              borderRadius: "10px",
+              padding: "10px 12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#555" }}>
+              <Calendar size={18} />
+              <CalendarioPopover onSelect={setDataSelecionada} />
+            </div>
           </div>
         </div>
 
-        {/* Especialista */}
-        <div className="mb-6">
-          <label className="block text-gray-700 font-medium mb-1">
-            Especialista
+        {/* Horários */}
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ fontWeight: 500, display: "block", marginBottom: "6px" }}>
+            Horários
           </label>
-          <DropdownEspecialistas
-            especialistas={especialistas}
-            onSelect={setEspecialistaSelecionado}
-          />
+          {[
+            { titulo: "Manhã", horas: ["09:00", "10:00", "11:00", "12:00"] },
+            { titulo: "Tarde", horas: ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"] },
+            { titulo: "Noite", horas: ["19:00", "20:00", "21:00"] },
+          ].map((periodo) => (
+            <div key={periodo.titulo} style={{ marginBottom: "1rem" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {periodo.horas.map((hora) => (
+                  <button
+                    key={hora}
+                    onClick={() => handleSelectHora(hora)}
+                    style={{
+                      padding: "8px 14px",
+                      border: horaSelecionada === hora ? "2px solid #c8a100" : "1px solid #ccc",
+                      borderRadius: "8px",
+                      background: horaSelecionada === hora ? "#f0d66e" : "#fff",
+                      fontWeight: horaSelecionada === hora ? 600 : 400,
+                      color: "#333",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {hora}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
+        {/* Especialista */}
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ fontWeight: 500, display: "block", marginBottom: "6px" }}>
+            Especialista
+          </label>
+          <div
+            style={{
+              border: "1px solid #ccc",
+              borderRadius: "10px",
+              padding: "10px 12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              color: "#555",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <User size={18} />
+              <DropdownEspecialistas
+                especialistas={especialistas}
+                onSelect={setEspecialistaSelecionado}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Botão */}
         <button
           onClick={handleAgendar}
-          className="w-full bg-[#CDA327] text-white font-semibold py-3 rounded-lg hover:bg-yellow-700 transition"
+          style={{
+            width: "100%",
+            background: "#c8a100",
+            color: "white",
+            fontWeight: 600,
+            border: "none",
+            borderRadius: "10px",
+            padding: "12px",
+            fontSize: "1rem",
+            cursor: "pointer",
+            transition: "background 0.2s",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "#b19000")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "#c8a100")}
         >
           AGENDAR
         </button>
