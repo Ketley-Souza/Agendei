@@ -1,4 +1,3 @@
-//horario
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
@@ -38,7 +37,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-/* ---------- Palette (cores dos eventos) ---------- */
+/* ---------- Cores para eventos (simples paleta interna) ---------- */
 const INTERNAL_PALETTE = [
   "#3B82F6",
   "#06B6D4",
@@ -50,7 +49,7 @@ const INTERNAL_PALETTE = [
 ];
 const getColor = (i) => INTERNAL_PALETTE[i % INTERNAL_PALETTE.length];
 
-/* ---------- Forma padrão de um horário (uso ao criar) ---------- */
+/* ---------- Forma padrão de um horário (ao criar) ---------- */
 const defaultHorarioShape = {
   dias: [],
   inicio: "09:00",
@@ -60,6 +59,13 @@ const defaultHorarioShape = {
 };
 
 /* =================== Componente principal =================== */
+/* Este componente:
+   - Carrega horários/serviços via thunks (redux)
+   - Exibe calendário (react-big-calendar)
+   - Abre drawer para criar/editar horários
+   - Permite selecionar múltiplos serviços e colaboradores via UI clicável
+   - Valida horário (fim > início) antes de enviar
+*/
 const HorariosAtendimento = () => {
   const dispatch = useDispatch();
   const { horarios = [], servicos = [], colaboradores = [] } =
@@ -71,9 +77,13 @@ const HorariosAtendimento = () => {
   const [localHorario, setLocalHorario] = useState(defaultHorarioShape);
   const [toast, setToast] = useState(null);
 
-  /* Colaboradores mostrados no select (carregados pela especialidade) */
+  /* Colaboradores filtrados conforme especialidades selecionadas */
   const [localColaboradores, setLocalColaboradores] = useState([]);
   const [colabLoading, setColabLoading] = useState(false);
+
+  /* Inputs de busca para melhorar escolha (UI) */
+  const [serviceQuery, setServiceQuery] = useState("");
+  const [colabQuery, setColabQuery] = useState("");
 
   /* Carrega horários e serviços ao montar a página */
   useEffect(() => {
@@ -81,10 +91,9 @@ const HorariosAtendimento = () => {
     dispatch(allServicos());
   }, [dispatch]);
 
-  /*
-    Carrega colaboradores com base na(s) especialidade(s) selecionada(s).
-    Tenta usar o thunk filterColaboradores (por compatibilidade) e faz fallback
-    para request direto ao endpoint caso necessário.
+  /* Busca colaboradores quando as especialidades mudam.
+     Primeiro tenta o thunk; se vazio/falha, faz fallback com fetch direto.
+     Normaliza a resposta para um formato consistente {value,label,_id,nome}.
   */
   useEffect(() => {
     const servicosArray =
@@ -133,8 +142,7 @@ const HorariosAtendimento = () => {
           throw new Error("thunk-empty");
         }
       })
-      .catch(async (err) => {
-        // fallback: request direto ao backend
+      .catch(async () => {
         try {
           const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
           const resp = await fetch(`${API}/horario/colaboradores`, {
@@ -179,7 +187,7 @@ const HorariosAtendimento = () => {
               setLocalColaboradores([]);
             }
           }
-        } catch (fetchErr) {
+        } catch {
           if (mounted) setLocalColaboradores([]);
         }
       })
@@ -192,20 +200,20 @@ const HorariosAtendimento = () => {
     };
   }, [dispatch, localHorario.especialidades, colaboradores]);
 
-  /* Atualiza uma chave do localHorario */
+  /* Atualiza uma chave do localHorario (utilitário simples) */
   const setHorarioKey = (key, value) =>
     setLocalHorario((h) => ({ ...h, [key]: value }));
 
-  /* Datas utilizadas para construir eventos na semana atual */
+  /* Datas da semana para posicionar eventos (semana atual) */
   const startOfWeekDate = startOfWeekFn(new Date(), { weekStartsOn: 0 });
   const diasSemanaData = Array.from({ length: 7 }).map((_, i) =>
     addDays(startOfWeekDate, i)
   );
 
   /*
-    Monta os eventos que o react-big-calendar exibirá.
-    - Aceita `inicio`/`fim` em "HH:mm" ou ISO (string).
-    - Constrói start/end com a data base do dia da semana.
+    Monta eventos para o calendário a partir do array `horarios`.
+    Aceita tempos em "HH:mm" ou ISO; converte para Date usando a data base
+    do dia da semana correspondente.
   */
   const formatEventos = useMemo(() => {
     const listaEventos = [];
@@ -294,7 +302,7 @@ const HorariosAtendimento = () => {
     return listaEventos;
   }, [horarios, servicos, colaboradores, localColaboradores, diasSemanaData]);
 
-  /* Formata objeto Date para "HH:mm" (usado em inputs type="time") */
+  /* Formata Date para "HH:mm" (usado nos inputs type="time") */
   const formatTime = (d) => {
     try {
       return format(new Date(d), "HH:mm");
@@ -306,9 +314,11 @@ const HorariosAtendimento = () => {
   const openNew = () => {
     setLocalHorario(defaultHorarioShape);
     setDrawerOpen(true);
+    setServiceQuery("");
+    setColabQuery("");
   };
 
-  /* ---------- Helpers pequenos para validação e envio ---------- */
+  /* ---------- Helpers pequenos para validação/normalização ---------- */
   const hhmmToMinutes = (hhmm) => {
     if (!hhmm || typeof hhmm !== "string") return null;
     const parts = hhmm.split(":");
@@ -331,7 +341,40 @@ const HorariosAtendimento = () => {
     return d.toISOString();
   };
 
-  /* =================== SALVAR (criar / atualizar) =================== */
+  /* Toggle para adicionar/remover seleção (serviços/colaboradores) */
+  const toggleSelection = (key, id) => {
+    setLocalHorario((h) => {
+      const arr = Array.isArray(h[key]) ? [...h[key]] : (h[key] ? [h[key]] : []);
+      const exists = arr.find((v) => String(v) === String(id));
+      if (exists) return { ...h, [key]: arr.filter((v) => String(v) !== String(id)) };
+      arr.push(id);
+      return { ...h, [key]: arr };
+    });
+  };
+
+  const removeSelected = (key, idToRemove) => {
+    setLocalHorario((h) => {
+      const arr = Array.isArray(h[key]) ? [...h[key]] : (h[key] ? [h[key]] : []);
+      return { ...h, [key]: arr.filter((v) => String(v) !== String(idToRemove)) };
+    });
+  };
+
+  /* Rotinas para mostrar label de id (UI) */
+  const getServiceLabel = (id) => {
+    const s = (servicos || []).find((x) => String(x._id ?? x.value ?? x.id) === String(id));
+    return s ? (s.label ?? s.nome ?? s.titulo ?? String(id)) : String(id);
+  };
+  const getColabLabel = (id) => {
+    const c = (localColaboradores || []).find((x) => String(x.value ?? x._id ?? x.id) === String(id))
+      || (colaboradores || []).find((x) => String(x._id ?? x.value ?? x.id) === String(id));
+    return c ? (c.label ?? c.nome ?? String(id)) : String(id);
+  };
+
+  /* =================== SALVAR (criar / atualizar) ===================
+     - Valida que todos os campos estejam preenchidos
+     - Valida que fim > início (mensagem única: "O horário de fim deve ser posterior ao início.")
+     - Converte horas HH:mm para ISO antes de enviar
+  */
   const save = async () => {
     if (
       !localHorario.dias ||
@@ -347,7 +390,6 @@ const HorariosAtendimento = () => {
       return;
     }
 
-    // Validação: fim deve ser posterior ao início
     const startMin = hhmmToMinutes(localHorario.inicio);
     const endMin = hhmmToMinutes(localHorario.fim);
     if (startMin === null || endMin === null) {
@@ -355,7 +397,6 @@ const HorariosAtendimento = () => {
       return;
     }
     if (endMin <= startMin) {
-      // Mensagem ao tentar salvar um horário onde o fim não é posterior ao início
       setToast({ type: "error", text: "O horário de fim deve ser posterior ao início." });
       return;
     }
@@ -372,13 +413,11 @@ const HorariosAtendimento = () => {
 
     try {
       if (localHorario && (localHorario._id || localHorario.id)) {
-        // atualizar
         const id = localHorario._id || localHorario.id;
         const payloadWithId = { ...basePayload, _id: id };
         dispatch(updateHorario({ horario: payloadWithId }));
         await dispatch(saveHorario());
       } else {
-        // criar
         dispatch(updateHorario({ horario: basePayload }));
         await dispatch(addHorario());
       }
@@ -411,6 +450,18 @@ const HorariosAtendimento = () => {
     }
   };
 
+  /* Filtragens simples para a UI de busca (serviços e colaboradores) */
+  const filteredServices = (servicos || []).filter((s) => {
+    if (!serviceQuery) return true;
+    const label = (s.label ?? s.nome ?? s.titulo ?? "").toLowerCase();
+    return label.includes(serviceQuery.trim().toLowerCase());
+  });
+  const filteredColabs = (localColaboradores || []).filter((c) => {
+    if (!colabQuery) return true;
+    const label = (c.label ?? c.nome ?? "").toLowerCase();
+    return label.includes(colabQuery.trim().toLowerCase());
+  });
+
   /* =================== RENDER =================== */
   return (
     <div className="p-5 overflow-auto h-full">
@@ -438,7 +489,7 @@ const HorariosAtendimento = () => {
         </div>
       )}
 
-      <div className="bg-white rounded shadow p-4">
+      <div className="bg-white rounded shadow p-4 mb-6">
         <Calendar
           localizer={localizer}
           onSelectEvent={(e) => {
@@ -447,8 +498,12 @@ const HorariosAtendimento = () => {
               ...hor,
               inicio: formatTime(hor.inicio),
               fim: formatTime(hor.fim),
+              especialidades: Array.isArray(hor.especialidades) ? hor.especialidades : hor.especialidades ? [hor.especialidades] : [],
+              colaboradores: Array.isArray(hor.colaboradores) ? hor.colaboradores : hor.colaboradores ? [hor.colaboradores] : [],
             });
             setDrawerOpen(true);
+            setServiceQuery("");
+            setColabQuery("");
           }}
           onSelectSlot={({ start, end }) => {
             const dia = getDay(start);
@@ -459,6 +514,8 @@ const HorariosAtendimento = () => {
               fim: formatTime(end),
             });
             setDrawerOpen(true);
+            setServiceQuery("");
+            setColabQuery("");
           }}
           selectable
           events={formatEventos}
@@ -503,88 +560,130 @@ const HorariosAtendimento = () => {
 
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-40"
-            onClick={() => setDrawerOpen(false)}
-          />
+          <div className="fixed inset-0 bg-black bg-opacity-40" onClick={() => setDrawerOpen(false)} />
           <div className="ml-auto w-full md:w-2/5 bg-white h-full shadow-xl p-6 overflow-auto z-50">
             <h3 className="text-lg font-semibold mb-4">
               {localHorario && (localHorario._id || localHorario.id) ? "Editar horário" : "Novo horário"}
             </h3>
 
-            {/* Dia */}
+            {/* Dia da semana */}
             <div className="mb-3">
               <label className="block font-medium mb-1">Dia da semana</label>
-              <select
-                value={localHorario.dias && localHorario.dias.length > 0 ? String(localHorario.dias[0]) : ""}
-                onChange={(e) => setHorarioKey("dias", [parseInt(e.target.value, 10)])}
-                className="border rounded w-full p-2"
-              >
+              <select value={localHorario.dias && localHorario.dias.length > 0 ? String(localHorario.dias[0]) : ""} onChange={(e) => setHorarioKey("dias", [parseInt(e.target.value, 10)])} className="border rounded w-full p-2">
                 <option value="">Selecione</option>
-                {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((d, i) => (
-                  <option key={i} value={i}>
-                    {d}
-                  </option>
-                ))}
+                {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((d, i) => (<option key={i} value={i}>{d}</option>))}
               </select>
             </div>
 
-            {/* Horários */}
+            {/* Início / Fim */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block font-medium mb-1">Início</label>
-                <input
-                  type="time"
-                  value={localHorario.inicio}
-                  onChange={(e) => setHorarioKey("inicio", e.target.value)}
-                  className="border rounded w-full p-2"
-                />
+                <input type="time" value={localHorario.inicio} onChange={(e) => setHorarioKey("inicio", e.target.value)} className="border rounded w-full p-2" />
               </div>
               <div>
                 <label className="block font-medium mb-1">Fim</label>
-                <input
-                  type="time"
-                  value={localHorario.fim}
-                  onChange={(e) => setHorarioKey("fim", e.target.value)}
-                  className="border rounded w-full p-2"
-                />
+                <input type="time" value={localHorario.fim} onChange={(e) => setHorarioKey("fim", e.target.value)} className="border rounded w-full p-2" />
               </div>
             </div>
 
-            {/* Especialidade */}
-            <div className="mt-3">
-              <label className="block font-medium mb-1">Especialidade</label>
-              <select
-                value={localHorario.especialidades && localHorario.especialidades.length > 0 ? String(localHorario.especialidades[0]) : ""}
-                onChange={(e) => setHorarioKey("especialidades", e.target.value ? [e.target.value] : [])}
-                className="border rounded w-full p-2"
-              >
-                <option value="">Selecione</option>
-                {(servicos || []).map((s) => (
-                  <option key={s._id ?? s.value ?? s.id} value={s._id ?? s.value ?? s.id}>
-                    {s.label ?? s.nome ?? s.titulo}
-                  </option>
+            {/* Especialidades - busca e botões clicáveis (multi-select) */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block font-medium">Especialidades</label>
+                <div className="text-sm text-gray-500">{(Array.isArray(localHorario.especialidades) ? localHorario.especialidades.length : 0)} selecionado(s)</div>
+              </div>
+
+              <input
+                placeholder="Buscar especialidade..."
+                value={serviceQuery}
+                onChange={(e) => setServiceQuery(e.target.value)}
+                className="w-full mb-2 p-2 border rounded"
+              />
+
+              <div className="grid grid-cols-2 gap-2 max-h-44 overflow-auto border rounded p-2">
+                {filteredServices.length === 0 ? (
+                  <div className="text-sm text-gray-500 col-span-2">Nenhuma especialidade encontrada</div>
+                ) : (
+                  filteredServices.map((s) => {
+                    const id = s._id ?? s.value ?? s.id;
+                    const selected = Array.isArray(localHorario.especialidades) && localHorario.especialidades.find((v) => String(v) === String(id));
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => toggleSelection("especialidades", id)}
+                        className={`text-left px-3 py-2 rounded border transition-colors duration-150 ${selected ? "bg-[#CDA327] text-white border-transparent shadow" : "bg-white text-gray-800 hover:bg-gray-50"}`}
+                        aria-pressed={!!selected}
+                      >
+                        {s.label ?? s.nome ?? s.titulo}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* chips das especialidades selecionadas */}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(Array.isArray(localHorario.especialidades) ? localHorario.especialidades : []).map((id) => (
+                  <span key={id} className="inline-flex items-center bg-gray-100 border rounded-full px-3 py-1 text-sm">
+                    <span className="mr-2">{getServiceLabel(id)}</span>
+                    <button onClick={() => removeSelected("especialidades", id)} className="text-gray-600 hover:text-gray-900" type="button">×</button>
+                  </span>
                 ))}
-              </select>
+              </div>
             </div>
 
-            {/* Colaborador */}
-            <div className="mt-3">
-              <label className="block font-medium mb-1">Colaborador</label>
-              <select
-                value={localHorario.colaboradores && localHorario.colaboradores.length > 0 ? String(localHorario.colaboradores[0]) : ""}
-                onChange={(e) => setHorarioKey("colaboradores", e.target.value ? [e.target.value] : [])}
-                className="border rounded w-full p-2"
-                disabled={colabLoading}
-              >
-                <option value="">{colabLoading ? "Carregando..." : "Selecione"}</option>
-                {!colabLoading && localColaboradores.length === 0 && <option value="" disabled>Nenhum colaborador disponível</option>}
-                {(localColaboradores || []).map((c) => (
-                  <option key={c.value ?? c._id ?? c.id} value={c.value ?? c._id ?? c.id}>
-                    {c.label ?? c.nome ?? (c.colaboradorId && c.colaboradorId.nome) ?? String(c)}
-                  </option>
+            {/* Colaboradores - busca e botões clicáveis (multi-select) */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block font-medium">Colaboradores</label>
+                <div className="text-sm text-gray-500">{(Array.isArray(localHorario.colaboradores) ? localHorario.colaboradores.length : 0)} selecionado(s)</div>
+              </div>
+
+              <input
+                placeholder="Buscar colaborador..."
+                value={colabQuery}
+                onChange={(e) => setColabQuery(e.target.value)}
+                className="w-full mb-2 p-2 border rounded"
+                disabled={colabLoading || (localHorario.especialidades || []).length === 0}
+              />
+
+              <div className="max-h-44 overflow-auto border rounded p-2">
+                {colabLoading ? (
+                  <div className="p-2 text-sm text-gray-500">Carregando...</div>
+                ) : (filteredColabs.length === 0) ? (
+                  <div className="p-2 text-sm text-gray-500">Nenhum colaborador disponível</div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {filteredColabs.map((c) => {
+                      const id = c.value ?? c._id ?? c.id;
+                      const selected = Array.isArray(localHorario.colaboradores) && localHorario.colaboradores.find((v) => String(v) === String(id));
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => toggleSelection("colaboradores", id)}
+                          className={`text-left px-3 py-2 rounded border transition-colors duration-150 ${selected ? "bg-[#CDA327] text-white border-transparent shadow" : "bg-white text-gray-800 hover:bg-gray-50"}`}
+                          aria-pressed={!!selected}
+                        >
+                          {c.label ?? c.nome ?? String(id)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* chips dos colaboradores selecionados */}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(Array.isArray(localHorario.colaboradores) ? localHorario.colaboradores : []).map((id) => (
+                  <span key={id} className="inline-flex items-center bg-gray-100 border rounded-full px-3 py-1 text-sm">
+                    <span className="mr-2">{getColabLabel(id)}</span>
+                    <button onClick={() => removeSelected("colaboradores", id)} className="text-gray-600 hover:text-gray-900" type="button">×</button>
+                  </span>
                 ))}
-              </select>
+              </div>
             </div>
 
             <div className="mt-6 space-y-2">
@@ -593,9 +692,7 @@ const HorariosAtendimento = () => {
               </button>
 
               {(localHorario && (localHorario._id || localHorario.id)) && (
-                <button onClick={() => setConfirmOpen(true)} className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">
-                  Excluir horário
-                </button>
+                <button onClick={() => setConfirmOpen(true)} className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">Excluir horário</button>
               )}
             </div>
           </div>
