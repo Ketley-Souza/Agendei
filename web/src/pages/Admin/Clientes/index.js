@@ -92,7 +92,7 @@ const Clientes = () => {
 
     return (
         <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
-            <Toaster position="top-right" />
+            <Toaster position="top-center" />
 
             {/* Cabeçalho */}
             <div className="flex justify-between items-center mb-10">

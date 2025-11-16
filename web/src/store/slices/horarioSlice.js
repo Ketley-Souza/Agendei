@@ -1,8 +1,8 @@
-//slide
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
 import consts from '../../consts';
+import util from "../../services/util";
 
 // 🔹 ESTADO INICIAL
 const INITIAL_STATE = {
@@ -15,8 +15,7 @@ const INITIAL_STATE = {
   colaboradores: [],
 };
 
-// 🔹 THUNKS ASSÍNCRONOS
-// addHorario
+// THUNKS ASSÍNCRONOS
 export const addHorario = createAsyncThunk(
   'horario/addHorario',
   async (payload, { getState, dispatch, rejectWithValue }) => {
@@ -31,7 +30,7 @@ export const addHorario = createAsyncThunk(
         const hh = Number(m[1]), mm = Number(m[2]);
         const d = new Date();
         d.setHours(hh, mm, 0, 0);
-        return d.toISOString();
+        return util.toLocalISO(d);
       };
 
       console.log('[DEBUG] addHorario chamado: beforeNormalize =', horarioToSendRaw);

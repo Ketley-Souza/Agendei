@@ -13,7 +13,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <Provider store={store}>
     <>
-      {/*<AdminRoutes />*/}
+      {/*<AdminRoutes /><ClienteRoutes />*/}
       <ClienteRoutes />
       <Toaster position="top-right" /> {/* <-- adiciona aqui */}
     </>

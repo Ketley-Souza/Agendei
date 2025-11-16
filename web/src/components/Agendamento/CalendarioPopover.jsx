@@ -1,24 +1,26 @@
-// src/components/Agendamento/CalendarioPopover.jsx
-import React, { useState } from "react";
+import CalendarioPopover from "../../../components/Agendamento/CalendarioPopover";
+import { useDispatch, useSelector } from "react-redux";
+import { updateAgendamento } from "../../store/slices/salaoSlice";
+import { filterAgenda } from "../../store/slices/salaoSlice";
+import { format } from "date-fns";
 
-const CalendarioPopover = ({ onSelect, defaultDate = "" }) => {
-  const [data, setData] = useState(defaultDate);
+export default function SelecaoData() {
+  const dispatch = useDispatch();
+  const { agendamento } = useSelector(state => state.salao);
 
-  const handleChange = (e) => {
-    setData(e.target.value);
-    onSelect && onSelect(e.target.value);
+  const handleSelectDate = (date) => {
+    const formatted = format(date, "yyyy-MM-dd");
+
+    dispatch(updateAgendamento({ key: "data", value: formatted }));
+
+    // carrega horários para esse dia
+    dispatch(filterAgenda());
   };
 
   return (
-    <div>
-      <input
-        type="date"
-        value={data}
-        onChange={handleChange}
-        className="w-full border rounded-lg px-3 py-2"
-      />
-    </div>
+    <CalendarioPopover
+      dataSelecionada={agendamento.data}
+      onSelecionar={handleSelectDate}
+    />
   );
-};
-
-export default CalendarioPopover;
+}
