@@ -1,7 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-// styles.css is imported globally in src/index.js
-
-// Componentes
+import { Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "../components/ProtectedRoute";
 import Sidebar from "../components/Sidebar";
 
 // Páginas
@@ -13,32 +11,65 @@ import HorariosAtendimento from "../pages/Admin/HorariosAtendimento";
 
 const AdminRoutes = () => {
   return (
-    <Router>
-      <div className="container-fluid h-100">
-        <div className="row h-100 flex">
-          {/* Sidebar fixa à esquerda */}
-          <Sidebar />
+    <div className="container-fluid h-100">
+      <div className="row h-100 flex">
+        {/* Sidebar fixa à esquerda */}
+        <Sidebar />
 
-          {/* Área principal das páginas */}
-          <div className="flex-1 overflow-auto">
-            <Routes>
-              {/* Redireciona a raiz para /agendamentos */}
-              <Route path="/" element={<Navigate to="/agendamentos" />} />
+        {/* Área principal das páginas */}
+        <div className="flex-1 overflow-auto">
+          <Routes>
+            {/* Redireciona a raiz para /agendamentos */}
+            <Route path="/" element={<Navigate to="/agendamentos" replace />} />
 
-              {/* Páginas principais */}
-              <Route path="/agendamentos" element={<Agendamentos />} />
-              <Route path="/clientes" element={<Clientes />} />
-              <Route path="/colaboradores" element={<Colaboradores />} />
-              <Route path="/servicos" element={<Servicos />} />
-              <Route path="/horarios-atendimento" element={<HorariosAtendimento />} />
+            {/* Páginas principais - protegidas para salão e colaborador */}
+            <Route
+              path="/agendamentos"
+              element={
+                <ProtectedRoute requiredType={['salao', 'colaborador']}>
+                  <Agendamentos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clientes"
+              element={
+                <ProtectedRoute requiredType="salao">
+                  <Clientes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/colaboradores"
+              element={
+                <ProtectedRoute requiredType="salao">
+                  <Colaboradores />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/servicos"
+              element={
+                <ProtectedRoute requiredType={['salao', 'colaborador']}>
+                  <Servicos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/horarios-atendimento"
+              element={
+                <ProtectedRoute requiredType={['salao', 'colaborador']}>
+                  <HorariosAtendimento />
+                </ProtectedRoute>
+              }
+            />
 
-              {/* Página não encontrada */}
-              <Route path="*" element={<h2 className="p-4">Página não encontrada</h2>} />
-            </Routes>
-          </div>
+            {/* Página não encontrada */}
+            <Route path="*" element={<h2 className="p-4">Página não encontrada</h2>} />
+          </Routes>
         </div>
       </div>
-    </Router>
+    </div>
   );
 };
 

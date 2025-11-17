@@ -119,9 +119,20 @@ router.post('/', upload.single('foto'), async (req, res) => {
         }
 
         // Cadastrar especialidades (serviços)
-        if (colaborador.especialidades?.length > 0) {
+        //Agora aceita string única e array
+        let especialidadesArray = [];
+        if (colaborador.especialidades) {
+            if (Array.isArray(colaborador.especialidades)) {
+                especialidadesArray = colaborador.especialidades;
+            } else if (typeof colaborador.especialidades === 'string' && colaborador.especialidades.trim()) {
+                //Converte única para array
+                especialidadesArray = [colaborador.especialidades.trim()];
+            }
+        }
+        
+        if (especialidadesArray.length > 0) {
             await Especialidade.insertMany(
-                colaborador.especialidades.map((servicoId) => ({
+                especialidadesArray.map((servicoId) => ({
                     servicoId,
                     colaboradorId,
                     status: 'Disponivel',

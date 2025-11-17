@@ -1,24 +1,36 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../store/slices/authSlice";
 import {
     CalendarBlankIcon,
     IdentificationBadgeIcon,
     AddressBookIcon,
     ClockCounterClockwiseIcon,
-    PackageIcon
+    PackageIcon,
+    SignOutIcon
 } from "@phosphor-icons/react";
 
 export default function Sidebar() {
     const [open, setOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { usuario } = useSelector((state) => state.auth);
 
-    const menuItems = [
-        { label: "Agendamentos", icon: CalendarBlankIcon, path: "/agendamentos" },
-        { label: "Clientes", icon: IdentificationBadgeIcon, path: "/clientes" },
-        { label: "Colaboradores", icon: AddressBookIcon, path: "/colaboradores" },
-        { label: "Horarios", icon: ClockCounterClockwiseIcon, path: "/horarios-atendimento" },
-        { label: "Servicos", icon: PackageIcon, path: "/servicos" },
+    //Mmenu com limitações de acesso
+    const todosMenuItems = [
+        { label: "Agendamentos", icon: CalendarBlankIcon, path: "/agendamentos", roles: ['salao', 'colaborador'] },
+        { label: "Clientes", icon: IdentificationBadgeIcon, path: "/clientes", roles: ['salao'] },
+        { label: "Colaboradores", icon: AddressBookIcon, path: "/colaboradores", roles: ['salao'] },
+        { label: "Horarios", icon: ClockCounterClockwiseIcon, path: "/horarios-atendimento", roles: ['salao', 'colaborador'] },
+        { label: "Servicos", icon: PackageIcon, path: "/servicos", roles: ['salao', 'colaborador'] },
     ];
+
+    //Filtro pelo tipo de usuário
+    const menuItems = todosMenuItems.filter(item => 
+        item.roles.includes(usuario?.tipo || '')
+    );
 
     return (
         <aside
@@ -39,8 +51,12 @@ export default function Sidebar() {
 
                 {/* Nome do espaço */}
                 <div className={`absolute left-16 transition-all duration-300 ${open ? "opacity-100 visible" : "opacity-0 invisible"}`}>
-                    <h1 className="font-semibold text-sm text-white">Nosso Espaço</h1>
-                    <p className="text-xs text-zinc-500">Salão</p>
+                    <h1 className="font-semibold text-sm text-white">
+                        {usuario?.tipo === 'salao' ? usuario?.nome || 'Salão' : 'Área Administrativa'}
+                    </h1>
+                    <p className="text-xs text-zinc-500">
+                        {usuario?.tipo === 'salao' ? 'Administrador' : usuario?.tipo === 'colaborador' ? 'Colaborador' : 'Usuário'}
+                    </p>
                 </div>
             </div>
 
@@ -77,16 +93,33 @@ export default function Sidebar() {
             </nav>
 
             {/* Rodapé */}
-            <div className="border-t border-[#30363d] p-3 flex items-center gap-3 relative">
-                <img
-                    src="https://avatars.githubusercontent.com/u/139895814?v=4"
-                    alt="user"
-                    className="w-8 h-8 rounded-full shrink-0"
-                />
-                <div className={`absolute left-16 transition-all duration-300 ${open ? "opacity-100 visible" : "opacity-0 invisible"}`}>
-                    <p className="text-sm font-medium text-white">Usuário</p>
-                    <p className="text-xs text-zinc-400">email@exemplo.com</p>
+            <div className="border-t border-[#30363d] p-3 space-y-2">
+                {/* Informações do usuário */}
+                <div className="flex items-center gap-3 relative">
+                    <img
+                        src={usuario?.foto || "https://avatars.githubusercontent.com/u/139895814?v=4"}
+                        alt={usuario?.nome || "Usuário"}
+                        className="w-8 h-8 rounded-full shrink-0 object-cover"
+                    />
+                    <div className={`absolute left-16 transition-all duration-300 ${open ? "opacity-100 visible" : "opacity-0 invisible"}`}>
+                        <p className="text-sm font-medium text-white">{usuario?.nome || "Usuário"}</p>
+                        <p className="text-xs text-zinc-400">{usuario?.email || "email@exemplo.com"}</p>
+                    </div>
                 </div>
+                
+                {/* Botão de logout */}
+                <button
+                    onClick={() => {
+                        dispatch(logout());
+                        navigate('/login');
+                    }}
+                    className={`w-full flex items-center px-4 py-2 rounded-xl text-sm font-medium 
+                        text-red-400 hover:bg-red-400/10 transition-all duration-200
+                        ${open ? "justify-start gap-3" : "justify-center"}`}
+                >
+                    <SignOutIcon size={22} className="shrink-0" />
+                    {open && <span>Desconectar</span>}
+                </button>
             </div>
         </aside>
     );

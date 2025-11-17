@@ -35,7 +35,19 @@ const HomeCliente = () => {
 
     // Navega para a página de agendamento.
     // Se receber um serviço, salva no Redux para o Agendamento ler.
+    //Se não estiver logado, redireciona para login
     const irParaAgendamento = (servicoSelecionado = null) => {
+        //Verifica login
+        const usuarioSalvo = localStorage.getItem('usuario');
+        const isLogado = !!usuarioSalvo;
+
+        if (!isLogado) {
+            //Não logado mmanda para login
+            navigate("/login");
+            return;
+        }
+
+        //Logado vai para agendamento
         if (servicoSelecionado) {
             dispatch(setServicoSelecionado(servicoSelecionado));
         } else {
@@ -43,7 +55,6 @@ const HomeCliente = () => {
         }
         navigate("/agendamento");
     };
-
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-12">
             {/* Container centralizado para toda a página */}

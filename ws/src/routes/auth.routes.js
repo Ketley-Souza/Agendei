@@ -11,7 +11,7 @@ const Especialidade = require('../models/relations/especialidade');
 /*=====
 Cadastro cliente
 =====*/
-router.post('/cadastro/cliente', async (req, res) => {
+router.post('/cadastro', async (req, res) => {
   try {
     const { nome, email, senha, telefone, dataNascimento, sexo, salaoId, endereco } = req.body;
     //validando
@@ -70,288 +70,82 @@ router.post('/cadastro/cliente', async (req, res) => {
 });
 
 /*=====
-Cadastro colaborador
- =====*/
-router.post('/cadastro/colaborador', async (req, res) => {
-  try {
-    const { nome, email, senha, telefone, dataNascimento, sexo, salaoId, especialidades } = req.body;
-    //Validando
-    if (!nome || !email || !senha || !telefone || !salaoId) {
-      return res.status(400).json({
-        error: true,
-        message: 'Nome, email, senha, telefone e salaoId são obrigatórios!',
-      });
-    }
-    //Vendo se o email existe no bd
-    const colaboradorExistente = await Colaborador.findOne({ email });
-    if (colaboradorExistente) {
-      return res.status(400).json({
-        error: true,
-        message: 'Email já cadastrado.',
-      });
-    }
-    //Cria colaborador
-    const novoColaborador = await new Colaborador({
-      nome,
-      email,
-      senha, //senha hardcoded temporaria
-      telefone,
-      dataNascimento: dataNascimento || new Date(),
-      sexo: sexo || 'Masculino',
-      status: 'Disponivel',
-    }).save();
-
-    //Para testar vinculo com salão
-    await new StatusColaborador({
-      salaoId,
-      colaboradorId: novoColaborador._id,
-      status: 'Disponivel',
-    }).save();
-    //Escolher especialidades
-    if (especialidades && Array.isArray(especialidades) && especialidades.length > 0) {
-      await Especialidade.insertMany(
-        especialidades.map((servicoId) => ({
-          servicoId,
-          colaboradorId: novoColaborador._id,
-          status: 'Disponivel',
-        }))
-      );
-    }
-    res.status(201).json({
-      error: false,
-      message: 'Colaborador cadastrado com sucesso!',
-      usuario: {
-        id: novoColaborador._id,
-        nome: novoColaborador.nome,
-        email: novoColaborador.email,
-        telefone: novoColaborador.telefone,
-        tipo: 'colaborador',
-      },
-    });
-  } catch (err) {
-    console.error('Erro ao cadastrar colaborador:', err);
-    res.status(500).json({
-      error: true,
-      message: err.message || 'Erro ao cadastrar colaborador!',
-    });
-  }
-});
-
-/*=====
-Cadastro salão, admin
- =====*/
-router.post('/cadastro/salao', async (req, res) => {
-  try {
-    const { nome, email, senha, telefone, endereco } = req.body;
-    //Validando
-    if (!nome || !email || !senha) {
-      return res.status(400).json({
-        error: true,
-        message: 'Nome, email e senha são obrigatórios.',
-      });
-    }
-    //Vendo se o email existe no bd
-    const salaoExistente = await Salao.findOne({ email });
-    if (salaoExistente) {
-      return res.status(400).json({
-        error: true,
-        message: 'Email já cadastrado.',
-      });
-    }
-    //Cria salão
-    const novoSalao = await new Salao({
-      nome,
-      email,
-      senha, //senha hardcoded temporaria
-      telefone: telefone || '',
-      endereco: endereco || {},
-    }).save();
-    res.status(201).json({
-      error: false,
-      message: 'Salão cadastrado com sucesso!',
-      usuario: {
-        id: novoSalao._id,
-        nome: novoSalao.nome,
-        email: novoSalao.email,
-        telefone: novoSalao.telefone,
-        tipo: 'salao',
-      },
-    });
-  } catch (err) {
-    console.error('Erro ao cadastrar salão:', err);
-    res.status(500).json({
-      error: true,
-      message: err.message || 'Erro ao cadastrar salão1',
-    });
-  }
-});
-
-/*=====
-Login cliente
- =====*/
-router.post('/login/cliente', async (req, res) => {
+Login geral
+=====*/
+router.post('/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
 
     if (!email || !senha) {
       return res.status(400).json({
         error: true,
-        message: 'Email e senha são obrigatórios.',
+        message: 'Email e senha devem estar preenchidos!',
       });
     }
-    //Busca cliente por email
-    const cliente = await Cliente.findOne({ email });
-    //Vendo se o cliente existe
-    if (!cliente) {
+
+    //Ver se tem um cliente primeiro
+    let usuario = await Cliente.findOne({ email });
+    let tipo = 'cliente';
+
+    //Se não for cliente olha emm colaborador
+    if (!usuario) {
+      usuario = await Colaborador.findOne({ email });
+      tipo = 'colaborador';
+    }
+
+    // Se ainda não encontrou, busca em Salão
+    if (!usuario) {
+      usuario = await Salao.findOne({ email });
+      tipo = 'salao';
+    }
+
+    //Vê se achou algum usuário
+    if (!usuario) {
       return res.status(401).json({
         error: true,
         message: 'Email ou senha incorretos.',
       });
     }
-    //Vendo se a senha é correta (texto puro temporario)
-    if (cliente.senha !== senha) {
+
+    //Valida senha
+    if (usuario.senha !== senha) {
       return res.status(401).json({
         error: true,
         message: 'Email ou senha incorretos.',
       });
     }
-    //Vendo se o cliente está disponivel
-    if (cliente.status === 'Indisponivel') {
+
+    //Verificar status (se é cliente ou colaborador)
+    if ((tipo === 'cliente' || tipo === 'colaborador') && usuario.status === 'Indisponivel') {
       return res.status(403).json({
         error: true,
-        message: 'Cliente inativo. Entre em contato com o salão!',
+        message: `${tipo === 'cliente' ? 'Cliente' : 'Colaborador'} inativo. Entre em contato com o salão!`,
       });
     }
-    //Retorna dados do cliente menos senha
-    res.json({
-      error: false,
-      message: 'Login realizado com sucesso!',
-      usuario: {
-        id: cliente._id,
-        nome: cliente.nome,
-        email: cliente.email,
-        telefone: cliente.telefone,
-        tipo: 'cliente',
-      },
-    });
-  } catch (err) {
-    console.error('Erro ao fazer login cliente:', err);
-    res.status(500).json({
-      error: true,
-      message: 'Erro ao fazer login.',
-    });
-  }
-});
+    //Esquema de resposta
+    const respostaUsuario = {
+      id: usuario._id,
+      nome: usuario.nome,
+      email: usuario.email,
+      telefone: usuario.telefone || '',
+      tipo,
+    };
 
-/*=====
-Login colaborador
- =====*/
-router.post('/login/colaborador', async (req, res) => {
-  try {
-    const { email, senha } = req.body;
-    //Validando
-    if (!email || !senha) {
-      return res.status(400).json({
-        error: true,
-        message: 'Email e senha são obrigatórios.',
-      });
+    //Caso for colaborador:
+    if (tipo === 'colaborador') {
+      respostaUsuario.foto = usuario.foto || null;
     }
-    //Busca colaborador por email
-    const colaborador = await Colaborador.findOne({ email });
-    //Vendo se o colaborador existe
-    if (!colaborador) {
-      return res.status(401).json({
-        error: true,
-        message: 'Email ou senha incorretos.',
-      });
+    if (tipo === 'salao' && usuario.endereco) {
+      respostaUsuario.endereco = usuario.endereco;
     }
-    //Vendo se a senha é correta (texto puro temporario)
-    if (colaborador.senha !== senha) {
-      return res.status(401).json({
-        error: true,
-        message: 'Email ou senha incorretos.',
-      });
-    }
-    //Vendo se o colaborador está disponivel
-    if (colaborador.status === 'Indisponivel') {
-      return res.status(403).json({
-        error: true,
-        message: 'Colaborador inativo.',
-      });
-    }
-    //Retorna dados do colaborador menos senha
-    res.json({
-      error: false,
-      message: 'Login realizado com sucesso!',
-      usuario: {
-        id: colaborador._id,
-        nome: colaborador.nome,
-        email: colaborador.email,
-        telefone: colaborador.telefone,
-        foto: colaborador.foto,
-        tipo: 'colaborador',
-      },
-    });
-  } catch (err) {
-    console.error('Erro ao fazer login colaborador:', err);
-    res.status(500).json({
-      error: true,
-      message: 'Erro ao fazer login.',
-    });
-  }
-});
 
-/*=====
-Login salão admin
- =====*/
-router.post('/login/salao', async (req, res) => {
-  try {
-    const { email, senha } = req.body;
-    //Validando
-    if (!email || !senha) {
-      return res.status(400).json({
-        error: true,
-        message: 'Email e senha são obrigatórios.',
-      });
-    }
-    //Busca salão por email
-    const salao = await Salao.findOne({ email });
-    //Vendo se o salão existe
-    if (!salao) {
-      return res.status(401).json({
-        error: true,
-        message: 'Email ou senha incorretos.',
-      });
-    }
-    //Vendo se o salão tem senha cadastrada
-    if (!salao.senha) {
-      return res.status(400).json({
-        error: true,
-        message: 'Salão sem senha cadastrada. Configure uma senha primeiro!',
-      });
-    }
-    //Vendo se a senha é correta 
-    if (salao.senha !== senha) {
-      return res.status(401).json({
-        error: true,
-        message: 'Email ou senha incorretos.',
-      });
-    }
-    //Retorna dados do salão menos senha
     res.json({
       error: false,
       message: 'Login realizado com sucesso!',
-      usuario: {
-        id: salao._id,
-        nome: salao.nome,
-        email: salao.email,
-        telefone: salao.telefone,
-        endereco: salao.endereco,
-        tipo: 'salao',
-      },
+      usuario: respostaUsuario,
     });
   } catch (err) {
-    console.error('Erro ao fazer login salão:', err);
+    console.error('Erro ao fazer login:', err);
     res.status(500).json({
       error: true,
       message: 'Erro ao fazer login.',
