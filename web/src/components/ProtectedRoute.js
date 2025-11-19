@@ -1,11 +1,11 @@
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import util from '../services/util';
 
 export default function ProtectedRoute({ children, requiredType = null }) {
     const { isLogado, tipo } = useSelector((state) => state.auth);
-  //Vendo se o usuário está no armazenamento local
-    const usuarioSalvo = localStorage.getItem('usuario');
-    const usuarioLocal = usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
+    //Vendo se o usuário está no armazenamento local
+    const usuarioLocal = util.getUsuarioFromLocalStorage();
     const isLogadoLocal = !!usuarioLocal;
     const tipoLocal = usuarioLocal?.tipo || null;
   //Alterna entre local e redux

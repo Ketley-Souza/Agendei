@@ -156,6 +156,24 @@ const util = {
         const seconds = String(date.getSeconds()).padStart(2, '0');
         return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     },
+    // -----------------------------
+    // SESSÃO / USUÁRIO
+    // -----------------------------
+    getUsuarioFromLocalStorage: () => {
+        try {
+            const raw = localStorage.getItem('usuario');
+            if (!raw) return null;
+            return JSON.parse(raw);
+        } catch (err) {
+            localStorage.removeItem('usuario');
+            return null;
+        }
+    },
+
+    getClienteIdFromLocalStorage: () => {
+        const usuario = util.getUsuarioFromLocalStorage();
+        return usuario?.id || usuario?._id || null;
+    },
 };
 
 export default util;

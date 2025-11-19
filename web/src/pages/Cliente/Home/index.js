@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ClockIcon, CalendarIcon } from "@phosphor-icons/react";
 import api from "../../../services/api";
 import CONSTS from "../../../consts";
+import util from "../../../services/util";
 import { setServicoSelecionado, limparServicoSelecionado } from "../../../store/slices/agendamentoSlice";
 
 const { salaoId } = CONSTS;
@@ -11,6 +12,7 @@ const { salaoId } = CONSTS;
 const HomeCliente = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const clienteId = useSelector(state => state.auth.usuario?.id);
     const [servicos, setServicos] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -38,15 +40,13 @@ const HomeCliente = () => {
     //Se não estiver logado, redireciona para login
     const irParaAgendamento = (servicoSelecionado = null) => {
         //Verifica login
-        const usuarioSalvo = localStorage.getItem('usuario');
+        const usuarioSalvo = util.getUsuarioFromLocalStorage();
         const isLogado = !!usuarioSalvo;
-
         if (!isLogado) {
             //Não logado mmanda para login
             navigate("/login");
             return;
         }
-
         //Logado vai para agendamento
         if (servicoSelecionado) {
             dispatch(setServicoSelecionado(servicoSelecionado));

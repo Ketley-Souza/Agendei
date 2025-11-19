@@ -143,7 +143,7 @@ export default function Agendamento() {
       const principal = servicosSelecionados[0];
       const adicionais = servicosSelecionados.slice(1).map((s) => s._id);
 
-      const clienteId = CONSTS.clienteId;
+      const clienteId = util.getClienteIdFromLocalStorage() || CONSTS.clienteId;
       const salaoId = CONSTS.salaoId;
 
       const dataObj = new Date(dataSelecionada);

@@ -18,6 +18,7 @@
   border: none; /* remove bordas de inputs e buttons */
   outline: none; /* remove outline de inputs e buttons */
   background: none; /* remove background padrão */
+  font-family: "Catamaran", sans-serif !important; /* <<< FONTE CATAMARAN */
 }
 
 input:-webkit-autofill {
@@ -53,8 +54,11 @@ select.rs-input:focus-visible {
   cursor: pointer;
 }
 
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* Scroll invisível */
+.no-scrollbar::-webkit-scrollbar,
+.rbc-time-view::-webkit-scrollbar,
+.rbc-time-content::-webkit-scrollbar {
+  display: none !important;
 }
 
 .no-scrollbar {
@@ -62,3 +66,104 @@ select.rs-input:focus-visible {
 }
 
 
+
+/*    BIG CALENDAR     */
+
+.rbc-allday-cell,
+.rbc-allday-events,
+.rbc-row.rbc-allday {
+  display: none !important;
+  height: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove offset gerado pelo overflow */
+.rbc-time-header.rbc-overflowing,
+.rbc-time-header-gutter,
+.rbc-time-gutter {
+  margin-right: 0 !important;
+}
+
+
+/* HEADER*/
+.rbc-header {
+  padding: 8px 0 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  background-color: #fafafa !important;
+  color: #5f6268 !important;
+  border-bottom: 1px solid #ececec !important;
+}
+
+/* Dia atual */
+.rbc-today {
+  background-color: #fcf7e4 !important; /* amarelo muito clarinho */
+}
+
+
+.rbc-time-gutter,
+.rbc-time-header-gutter {
+  width: 50px !important;
+  padding-right: 6px !important;
+  color: #6b7280 !important;
+}
+
+.rbc-label {
+  font-size: 13px !important;
+  color: #6b7280 !important;
+}
+
+
+/* EVENTOS*/
+.rbc-event {
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  background-color: #d4b056 !important; /* dourado elegante */
+  color: #dedede !important;            /* <<< TEXTO PERFEITO PARA AMARELO */
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+  font-family: "Catamaran", sans-serif !important;
+}
+
+.rbc-event-content {
+  font-size: 15px !important;
+  color: #ffffff !important;  /* <<< mantém contraste ideal */
+}
+
+.rbc-event:hover {
+  filter: brightness(1.10);
+}
+
+
+/* Remove linhas laterais */
+.rbc-day-bg {
+  border-left: 1px solid #f1f1f1 !important;
+}
+/* Linhas horizontais entre horários */
+.rbc-timeslot-group {
+  border-top: 1px solid #f1f1f1 !important;
+  border-bottom: none !important;
+}
+/* Remove linha grossa extra */
+.rbc-time-content {
+  border-left: none !important;
+  border-top: none !important; 
+}
+.rbc-time-header-content {
+  border-right: none !important;
+  border-top: none !important;
+}
+
+/* Remove linhas fracas */
+.rbc-timeslot-group {
+  border-top: 1px solid #f3f3f3 !important;
+}
+/* Mantém somente as linhas principais */
+.rbc-time-content > * > *:not(:first-child) {
+  border-top: 1px solid #e5e5e5 !important;
+}
+/* Remove excesso de divisórias internas */
+.rbc-day-slot .rbc-time-slot {
+  border-top: 0 !important;
+}

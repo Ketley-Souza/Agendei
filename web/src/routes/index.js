@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { verificarUsuario } from '../store/slices/authSlice';
+import sessionUtil from '../services/util';
 import PublicRoutes from './public.routes';
 import ClienteRoutes from './cliente.routes';
 import AdminRoutes from './admin.routes';
@@ -17,16 +18,10 @@ export default function AppRoutes() {
 
     //Validando usuário
     useEffect(() => {
-        //Confere armazementamento local
-        const usuarioSalvo = localStorage.getItem('usuario');
+        //Confere armazenamento local
+        const usuarioSalvo = sessionUtil.getUsuarioFromLocalStorage();
         if (usuarioSalvo && !isLogado) {
-            try {
-                JSON.parse(usuarioSalvo); //Valida json
-                dispatch(verificarUsuario());
-            } catch (err) {
-                //Se não for json válido limpa
-                localStorage.removeItem('usuario');
-            }
+            dispatch(verificarUsuario());
         }
     }, [dispatch, isLogado]);
 
@@ -36,14 +31,14 @@ export default function AppRoutes() {
     let tipoLocal = null;
     
     try {
-        const usuarioSalvo = localStorage.getItem('usuario');
-        if (usuarioSalvo) {
-            usuarioLocal = JSON.parse(usuarioSalvo);
+        const usuario = sessionUtil.getUsuarioFromLocalStorage();
+        if (usuario) {
+            usuarioLocal = usuario;
             isLogadoLocal = !!usuarioLocal && !!usuarioLocal.id;
             tipoLocal = usuarioLocal?.tipo || null;
         }
     } catch (err) {
-        //Se houver erro ao parsear, limpa
+        //Se houver erro ao parsear, limpa o localStorage
         localStorage.removeItem('usuario');
     }
 

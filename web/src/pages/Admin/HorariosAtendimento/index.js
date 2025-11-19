@@ -215,7 +215,6 @@ const HorariosAtendimento = () => {
         culture="pt-BR"
         eventPropGetter={(event) => ({
           style: {
-            background: `linear-gradient(135deg, ${event.resource.backgroundColor}, #00000033)`,
             border: "none",
             color: "#fff",
           }

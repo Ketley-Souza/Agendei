@@ -15,9 +15,6 @@ export default function CardDataHorario({
     onSelectHora,
     horaSelecionada,
 
-    especialistas = [],
-    especialistaSelecionado,
-    onSelectEspecialista
 }) {
 
     const today = new Date();
@@ -92,7 +89,7 @@ export default function CardDataHorario({
          RENDER PERIODOS
     ====================== */
     const renderPeriod = (titulo, lista, drag) => (
-        <div className="mb-3">
+        <div className="">
             <p className="text-xs text-gray-500 mb-1">{titulo}</p>
 
             {lista.length === 0 ? (
@@ -198,7 +195,7 @@ export default function CardDataHorario({
             {/* ============================
                     HORÁRIOS
             ============================ */}
-            <p className="text-sm font-medium text-gray-700 mb-2">Horários</p>
+            <p className="text-sm font-medium text-gray-700 mb-3">Horários</p>
 
             {renderPeriod("Manhã", manha, dragManha)}
             {renderPeriod("Tarde", tarde, dragTarde)}

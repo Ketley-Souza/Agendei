@@ -15,18 +15,26 @@ const util = require('../util');
 // -----------------------------
 // FILTRAR AGENDAMENTOS
 // -----------------------------
+
 router.post('/filter', async (req, res) => {
     try {
-        const { range, salaoId } = req.body;
+        const { range, salaoId, clienteId } = req.body;
 
-        const agendamentos = await Agendamento.find({
-            status: 'A',
+        // Monta query base com salão e intervalo de datas
+        const query = {
             salaoId,
             data: {
                 $gte: startOfDay(new Date(range.start)),
                 $lte: endOfDay(new Date(range.end)),
             },
-        }).populate([
+        };
+
+        // Se foi enviado clienteId, filtra também pelo cliente
+        if (clienteId) {
+            query.clienteId = clienteId;
+        }
+
+        const agendamentos = await Agendamento.find(query).populate([
             { path: 'servicoId', select: 'nomeServico duracao preco' },
             { path: 'servicosAdicionais', select: 'nomeServico duracao preco' },
             { path: 'colaboradorId', select: 'nome' },
@@ -108,6 +116,41 @@ router.post('/', async (req, res) => {
         res.json({ error: true, message: err.message });
     }
 });
+
+// ---------------------------------------------
+// ROTA REAL DE CANCELAMENTO
+// ---------------------------------------------
+router.put('/cancelar/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const agendamento = await Agendamento.findById(id);
+        if (!agendamento) {
+            return res.status(404).json({
+                error: true,
+                message: "Agendamento não encontrado"
+            });
+        }
+
+        agendamento.status = 'I'; // I = Inativo/Cancelado
+        await agendamento.save();
+
+        return res.json({
+            error: false,
+            message: "Agendamento cancelado com sucesso",
+            agendamento
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            error: true,
+            message: err.message
+        });
+    }
+});
+
+
+
 
 // -----------------------------
 // DIAS DISPONÍVEIS (inalterado)
