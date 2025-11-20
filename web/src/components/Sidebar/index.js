@@ -93,31 +93,24 @@ export default function Sidebar() {
             </nav>
 
             {/* Rodapé */}
-            <div className="border-t border-[#30363d] p-3 space-y-2">
-                {/* Informações do usuário */}
-                <div className="flex items-center gap-3 relative">
-                    <img
-                        src={usuario?.foto || "https://avatars.githubusercontent.com/u/139895814?v=4"}
-                        alt={usuario?.nome || "Usuário"}
-                        className="w-8 h-8 rounded-full shrink-0 object-cover"
-                    />
-                    <div className={`absolute left-16 transition-all duration-300 ${open ? "opacity-100 visible" : "opacity-0 invisible"}`}>
-                        <p className="text-sm font-medium text-white">{usuario?.nome || "Usuário"}</p>
-                        <p className="text-xs text-zinc-400">{usuario?.email || "email@exemplo.com"}</p>
+            <div className="border-t border-[#30363d] pt-3 px-2 space-y-2">
+                <div className="flex items-center gap-3 px-2 py-2">
+                    <div className="w-9 h-9 bg-[#CDA327]/20 rounded-full flex items-center justify-center shrink-0">
+                        <span className="text-xs font-semibold text-[#CDA327]">
+                            {usuario?.nome?.charAt(0)?.toUpperCase() || "U"}
+                        </span>
+                    </div>
+                    <div className={`overflow-hidden transition-all duration-300 ${open ? "opacity-100 w-auto" : "opacity-0 w-0"}`}>
+                        <p className="text-xs font-medium text-white truncate">{usuario?.nome || "Usuário"}</p>
+                        <p className="text-[10px] text-zinc-400 truncate">{usuario?.email || "email@exemplo.com"}</p>
                     </div>
                 </div>
                 
-                {/* Botão de logout */}
                 <button
-                    onClick={() => {
-                        dispatch(logout());
-                        navigate('/login');
-                    }}
-                    className={`w-full flex items-center px-4 py-2 rounded-xl text-sm font-medium 
-                        text-red-400 hover:bg-red-400/10 transition-all duration-200
-                        ${open ? "justify-start gap-3" : "justify-center"}`}
+                    onClick={() => { dispatch(logout()); navigate('/login'); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-600 hover:bg-red-800/10 transition-all"
                 >
-                    <SignOutIcon size={22} className="shrink-0" />
+                    <SignOutIcon size={24} className="shrink-0" />
                     {open && <span>Desconectar</span>}
                 </button>
             </div>

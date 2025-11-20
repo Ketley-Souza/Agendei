@@ -1,8 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const { format } = require('date-fns');
 const { ptBR } = require('date-fns/locale');
 
@@ -13,30 +11,16 @@ const StatusColaborador = require('../models/relations/statusColaborador');
 const Especialidade = require('../models/relations/especialidade');
 const Servico = require('../models/servico');
 
-//Foto colaborador
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '..', '..', 'uploads', 'colaboradores');
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueName = `${Date.now()}-${file.originalname}`;
-        cb(null, uniqueName);
-    },
-});
+const { colaboradorStorage } = require('../config/cloudinary');
 
 const upload = multer({
-    storage,
+    storage: colaboradorStorage,
     limits: { fileSize: 5 * 1024 * 1024 }, // limite: 5MB
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|webp/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
 
-        if (extname && mimetype) {
+        if (mimetype) {
             cb(null, true);
         } else {
             cb(new Error('Apenas imagens são permitidas.'));
@@ -44,48 +28,33 @@ const upload = multer({
     },
 });
 
-// ===================================================
-// CRIAR COLABORADOR (SEM PAGAMENTO)
-// ===================================================
 router.post('/', upload.single('foto'), async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-        //Json para string
-        let colaboradorData;
-        if (req.body.colaborador) {
-            try {
-                colaboradorData = typeof req.body.colaborador === 'string' 
-                    ? JSON.parse(req.body.colaborador) 
-                    : req.body.colaborador;
-            } catch (e) {
-                colaboradorData = req.body.colaborador;
-            }
-        } else {
-            colaboradorData = req.body;
-        }
-        
+        let colaboradorData = req.body.colaborador
+            ? typeof req.body.colaborador === 'string'
+                ? JSON.parse(req.body.colaborador)
+                : req.body.colaborador
+            : req.body;
+
         const salaoId = req.body.salaoId || colaboradorData.salaoId;
-        
-        //Adicionar foto se foi enviada
+
         if (req.file) {
-            colaboradorData.foto = `/uploads/colaboradores/${req.file.filename}`;
+            colaboradorData.foto = req.file.path;
         }
-        
+
         const colaborador = colaboradorData;
         let newColaborador = null;
 
-        // Verificar se já existe colaborador
         const existentColaborador = await Colaborador.findOne({
             $or: [
                 { email: colaborador.email },
                 { telefone: colaborador.telefone },
-                // { cpf: colaborador.cpf },
             ],
         });
 
-        // Criar novo colaborador se não existir
         if (!existentColaborador) {
             newColaborador = await new Colaborador({
                 ...colaborador,
@@ -97,7 +66,6 @@ router.post('/', upload.single('foto'), async (req, res) => {
             ? existentColaborador._id
             : newColaborador._id;
 
-        // Criar ou atualizar vínculo (StatusColaborador)
         const existentRelationship = await StatusColaborador.findOne({
             salaoId,
             colaboradorId,
@@ -118,18 +86,12 @@ router.post('/', upload.single('foto'), async (req, res) => {
             );
         }
 
-        // Cadastrar especialidades (serviços)
-        //Agora aceita string única e array
-        let especialidadesArray = [];
-        if (colaborador.especialidades) {
-            if (Array.isArray(colaborador.especialidades)) {
-                especialidadesArray = colaborador.especialidades;
-            } else if (typeof colaborador.especialidades === 'string' && colaborador.especialidades.trim()) {
-                //Converte única para array
-                especialidadesArray = [colaborador.especialidades.trim()];
-            }
-        }
-        
+        const especialidadesArray = Array.isArray(colaborador.especialidades)
+            ? colaborador.especialidades
+            : typeof colaborador.especialidades === 'string' && colaborador.especialidades.trim()
+                ? [colaborador.especialidades.trim()]
+                : [];
+
         if (especialidadesArray.length > 0) {
             await Especialidade.insertMany(
                 especialidadesArray.map((servicoId) => ({
@@ -156,9 +118,6 @@ router.post('/', upload.single('foto'), async (req, res) => {
     }
 });
 
-// ===================================================
-// FILTRAR COLABORADORES
-// ===================================================
 router.post('/filter', async (req, res) => {
     try {
         const colaboradores = await Colaborador.find(req.body.filters);
@@ -168,21 +127,16 @@ router.post('/filter', async (req, res) => {
     }
 });
 
-// ===================================================
-// LISTAR COLABORADORES DE UM SALÃO
-// ===================================================
 router.get('/salao/:salaoId', async (req, res) => {
     try {
         const { salaoId } = req.params;
 
-        //Validando
         if (!mongoose.Types.ObjectId.isValid(salaoId)) {
             return res.status(400).json({ error: true, message: 'salaoId inválido' });
         }
 
         let listaColaboradores = [];
 
-        // Buscar relacionamentos (StatusColaborador)
         const colaboradores = await StatusColaborador.find({
             salaoId,
             status: { $ne: 'Excluido' },
@@ -190,21 +144,23 @@ router.get('/salao/:salaoId', async (req, res) => {
             .populate('colaboradorId')
             .select('colaboradorId dataCadastro status');
 
-            // Montar lista com especialidades
+        const colaboradoresValidos = colaboradores.filter(c => c.colaboradorId);
 
-            //Problema de caso (N+1), uma querry para cada 
-        const colaboradorIds = colaboradores.map(c => c.colaboradorId._id);
+        if (colaboradoresValidos.length === 0) {
+            return res.json({ error: false, colaboradores: [] });
+        }
+
+        const colaboradorIds = colaboradoresValidos.map(c => c.colaboradorId._id);
         const todasEspecialidades = await Especialidade.find({
             colaboradorId: { $in: colaboradorIds }
         }).populate('servicoId');
 
-        //Buscar serviço
-        const servicoIds = [...new Set(todasEspecialidades.map(e => {
-            if (e.servicoId?._id) return e.servicoId._id.toString();
-            if (e.servicoId) return e.servicoId.toString();
-            return null;
-        }).filter(Boolean))];
-        
+        const servicoIds = [...new Set(
+            todasEspecialidades
+                .map(e => e.servicoId?._id?.toString() || e.servicoId?.toString())
+                .filter(Boolean)
+        )];
+
         const servicosMap = {};
         if (servicoIds.length > 0) {
             const servicos = await Servico.find({ _id: { $in: servicoIds } });
@@ -212,7 +168,7 @@ router.get('/salao/:salaoId', async (req, res) => {
                 servicosMap[s._id.toString()] = s.nomeServico;
             });
         }
-        //Mapear especialidade
+
         const especialidadesPorColaborador = {};
         todasEspecialidades.forEach(e => {
             const id = e.colaboradorId.toString();
@@ -228,18 +184,16 @@ router.get('/salao/:salaoId', async (req, res) => {
             }
         });
 
-        //Lista consultando mapa
-        for (let colaborador of colaboradores) {
+        for (let colaborador of colaboradoresValidos) {
             const colaboradorIdStr = colaborador.colaboradorId._id.toString();
             const especialidades = especialidadesPorColaborador[colaboradorIdStr] || [];
 
             listaColaboradores.push({
                 ...colaborador._doc,
-                especialidades: especialidades,
+                especialidades,
             });
         }
 
-        // Montar resposta final
         res.json({
             error: false,
             colaboradores: listaColaboradores.map((c) => ({
@@ -258,79 +212,73 @@ router.get('/salao/:salaoId', async (req, res) => {
     }
 });
 
-// ===================================================
-// ATUALIZAR COLABORADOR
-// ===================================================
 router.put('/:colaboradorId', upload.single('foto'), async (req, res) => {
     try {
-        //Json para string
-        let bodyData;
-        if (req.body.colaborador) {
-            try {
-                bodyData = typeof req.body.colaborador === 'string' 
-                    ? JSON.parse(req.body.colaborador) 
-                    : req.body.colaborador;
-            } catch (e) {
-                bodyData = req.body.colaborador;
-            }
-        } else {
-            bodyData = req.body;
-        }
-        
-        const { vinculo, vinculoId, especialidades } = bodyData;
         const { colaboradorId } = req.params;
 
-        //Validando
         if (!mongoose.Types.ObjectId.isValid(colaboradorId)) {
             return res.status(400).json({ error: true, message: 'colaboradorId inválido!' });
         }
 
-        // Atualizar foto se foi enviada
-        if (req.file) {
-            bodyData.foto = `/uploads/colaboradores/${req.file.filename}`;
+        let jsonColaborador;
+        if (req.body.colaborador) {
+            jsonColaborador = typeof req.body.colaborador === 'string'
+                ? JSON.parse(req.body.colaborador)
+                : req.body.colaborador;
+        } else {
+            jsonColaborador = req.body;
         }
 
-        // Remover campos que não devem ser atualizados diretamente no colaborador
-        const { vinculo: _, vinculoId: __, especialidades: ___, ...colaboradorData } = bodyData;
+        const { vinculo, vinculoId, especialidades } = jsonColaborador;
 
-        // Atualizar dados principais
-        const colaborador = await Colaborador.findByIdAndUpdate(colaboradorId, colaboradorData, { new: true });
+        if (req.file) {
+            jsonColaborador.foto = req.file.path;
+        }
+
+        delete jsonColaborador.vinculo;
+        delete jsonColaborador.vinculoId;
+        delete jsonColaborador.especialidades;
+        delete jsonColaborador.especialidadesIds;
+        delete jsonColaborador.dataCadastro;
+
+        const colaborador = await Colaborador.findByIdAndUpdate(
+            colaboradorId,
+            jsonColaborador,
+            { new: true }
+        );
 
         if (!colaborador) {
             return res.status(404).json({ error: true, message: 'Colaborador não encontrado!' });
         }
 
-        // Atualizar vínculo (StatusColaborador)
-        if (vinculo) {
+        if (vinculo && vinculoId) {
             await StatusColaborador.findByIdAndUpdate(vinculoId, { status: vinculo });
         }
 
-        // Atualizar especialidades (serviços)
-        if (especialidades) {
+        if (especialidades && Array.isArray(especialidades)) {
             await Especialidade.deleteMany({ colaboradorId });
 
-            await Especialidade.insertMany(
-                especialidades.map((servicoId) => ({
-                    servicoId,
-                    colaboradorId,
-                    status: 'Disponivel',
-                }))
-            );
+            if (especialidades.length > 0) {
+                await Especialidade.insertMany(
+                    especialidades.map((servicoId) => ({
+                        servicoId,
+                        colaboradorId,
+                        status: 'Disponivel',
+                    }))
+                );
+            }
         }
 
-        res.json({ error: false });
+        return res.json({ error: false, colaborador });
     } catch (err) {
-        res.json({ error: true, message: err.message });
+        console.error('Erro ao atualizar colaborador:', err);
+        return res.status(500).json({ error: true, message: err.message });
     }
 });
 
-// ===================================================
-// EXCLUIR (DESVINCULAR) COLABORADOR DO SALÃO
-// ===================================================
 router.delete('/vinculo/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        //Validando
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: true, message: 'ID inválido' });
         }

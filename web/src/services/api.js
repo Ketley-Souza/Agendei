@@ -14,10 +14,10 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Função auxiliar para gerar URL completa da imagem
-export const urlImagem = (caminhoRelativo) => {
-    if (!caminhoRelativo) return null;
-    return `${util.baseURL}${caminhoRelativo}`;
+// Função auxiliar para retornar URL da imagem (apenas Cloudinary)
+export const urlImagem = (url) => {
+    if (!url) return null;
+    return url.startsWith('http') ? url : null;
 };
 
 export default api;

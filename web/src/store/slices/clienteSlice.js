@@ -152,6 +152,51 @@ export const unlinkCliente = createAsyncThunk(
     }
 );
 
+export const atualizarPerfilCliente = createAsyncThunk(
+    'cliente/atualizarPerfilCliente',
+    async (dadosAtualizacao, { rejectWithValue }) => {
+        try {
+            const { clienteId, foto, ...dados } = dadosAtualizacao;
+            
+            // Se tem foto (File), fazer upload primeiro
+            let fotoUrl = foto;
+            if (foto && foto instanceof File) {
+                const formData = new FormData();
+                formData.append('foto', foto);
+                
+                const uploadRes = await api.post('/cliente/upload-foto', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                
+                if (uploadRes.data.error) {
+                    toast.error('Erro ao enviar foto');
+                    return rejectWithValue(uploadRes.data.message);
+                }
+                
+                fotoUrl = uploadRes.data.fotoUrl;
+            }
+            
+            // Atualizar dados do cliente
+            const res = await api.put(`/cliente/${clienteId}`, {
+                ...dados,
+                foto: fotoUrl
+            });
+
+            if (res.data.error) {
+                toast.error(res.data.message);
+                return rejectWithValue(res.data.message);
+            }
+
+            toast.success('Perfil atualizado com sucesso!');
+            return res.data.cliente;
+        } catch (err) {
+            const message = err.response?.data?.message || err.message || 'Erro ao atualizar perfil';
+            toast.error(message);
+            return rejectWithValue(message);
+        }
+    }
+);
+
 // --- Slice ---
 const clienteSlice = createSlice({
     name: 'cliente',

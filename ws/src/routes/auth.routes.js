@@ -5,15 +5,10 @@ const Cliente = require('../models/cliente');
 const Colaborador = require('../models/colaborador');
 const Salao = require('../models/salao');
 const StatusCliente = require('../models/relations/statusCliente');
-const StatusColaborador = require('../models/relations/statusColaborador');
-const Especialidade = require('../models/relations/especialidade');
 
-/*=====
-Cadastro cliente
-=====*/
 router.post('/cadastro', async (req, res) => {
   try {
-    const { nome, email, senha, telefone, dataNascimento, sexo, salaoId, endereco } = req.body;
+    const { nome, email, senha, telefone, dataNascimento, sexo, salaoId, endereco, foto } = req.body;
     //validando
     if (!nome || !email || !senha || !telefone) {
       return res.status(400).json({
@@ -37,6 +32,7 @@ router.post('/cadastro', async (req, res) => {
       telefone,
       dataNascimento: dataNascimento || new Date(),
       sexo: sexo || 'Masculino',
+      foto: foto || '',
       status: 'Disponivel',
       endereco: endereco || {},
     }).save();
@@ -57,6 +53,9 @@ router.post('/cadastro', async (req, res) => {
         nome: novoCliente.nome,
         email: novoCliente.email,
         telefone: novoCliente.telefone,
+        foto: novoCliente.foto || '',
+        dataNascimento: novoCliente.dataNascimento,
+        sexo: novoCliente.sexo,
         tipo: 'cliente',
       },
     });
@@ -131,9 +130,11 @@ router.post('/login', async (req, res) => {
       tipo,
     };
 
-    //Caso for colaborador:
-    if (tipo === 'colaborador') {
-      respostaUsuario.foto = usuario.foto || null;
+    //Adicionar dados extras para cliente e colaborador:
+    if (tipo === 'cliente' || tipo === 'colaborador') {
+      respostaUsuario.foto = usuario.foto || '';
+      respostaUsuario.dataNascimento = usuario.dataNascimento || '';
+      respostaUsuario.sexo = usuario.sexo || '';
     }
     if (tipo === 'salao' && usuario.endereco) {
       respostaUsuario.endereco = usuario.endereco;

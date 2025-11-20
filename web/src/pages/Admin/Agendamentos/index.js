@@ -24,15 +24,12 @@ const Agendamentos = () => {
   const { agendamentos } = useSelector((state) => state.agendamento);
   const [view, setView] = useState("month");
 
-  // === Formata os eventos ===
   const formatEventos = () =>
     agendamentos.map((agendamento) => {
       const inicio = new Date(agendamento.data);
       
-      //Usar ou calcular duração total
       let duracaoTotal = agendamento.duracaoTotal || agendamento.servicoId?.duracao || 0;
       
-      //Fun para calcular duração total
       if (!agendamento.duracaoTotal) {
         if (agendamento.servicosAdicionais && Array.isArray(agendamento.servicosAdicionais)) {
           agendamento.servicosAdicionais.forEach(servico => {
@@ -43,7 +40,6 @@ const Agendamentos = () => {
       
       const fim = addMinutes(inicio, duracaoTotal);
 
-      //Colocar os serviços juntos
       const nomeServicoPrincipal = agendamento.servicoId?.nomeServico || 'Serviço';
       const nomesAdicionais = agendamento.servicosAdicionais && Array.isArray(agendamento.servicosAdicionais)
         ? agendamento.servicosAdicionais.map(s => s.nomeServico).filter(Boolean)
@@ -61,7 +57,6 @@ const Agendamentos = () => {
       };
     });
 
-  // === Carrega os agendamentos do mês ===
   useEffect(() => {
     const today = new Date();
     const start = format(startOfWeek(today, { weekStartsOn: 0 }), "yyyy-MM-dd");
@@ -72,7 +67,6 @@ const Agendamentos = () => {
     dispatch(filterAgendamentos({ start, end }));
   }, [dispatch]);
 
-  // === Atualiza range quando o mês muda ===
   const formatRange = (range) => {
     if (Array.isArray(range)) {
       return {
@@ -86,13 +80,10 @@ const Agendamentos = () => {
     };
   };
 
-  // === Renderiza cada evento ===
   const renderEvento = ({ event }) => <span>{event.title}</span>;
 
-  // === Toolbar personalizada ===
   const CustomToolbar = ({ label, onNavigate, onView, view }) => (
     <div className="relative flex flex-col md:flex-row items-center bg-white px-6 py-3 border-b border-gray-200 rounded-t-lg shadow-sm">
-      {/* Navegação (voltar / próximo) */}
       <div className="flex items-center space-x-2 mb-2 md:mb-0">
         <button
           onClick={() => onNavigate("PREV")}
@@ -108,12 +99,10 @@ const Agendamentos = () => {
         </button>
       </div>
 
-      {/* Título centralizado */}
       <h2 className="absolute left-1/2 transform -translate-x-1/2 text-base font-medium text-gray-800 select-none">
         {label}
       </h2>
 
-      {/* Tipos de visualização — removemos o "day" */}
       <div className="flex flex-wrap sm:flex-nowrap gap-2 justify-center mt-2 sm:mt-0 md:ml-auto">
         {["month", "week", "agenda"].map((mode) => (
           <button
@@ -138,14 +127,12 @@ const Agendamentos = () => {
 
   return (
     <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
-      {/* ===== Cabeçalho ===== */}
       <div className="flex justify-center items-center mb-6">
         <h2 className="text-2xl font-catamaran font-semibold text-[#2c2c2c]">
           Agendamentos
         </h2>
       </div>
 
-      {/* ===== Calendário ===== */}
       <div className="overflow-hidden font-catamaran ">
         <Calendar
           localizer={localizer}
@@ -162,7 +149,6 @@ const Agendamentos = () => {
           popup
           selectable
           eventPropGetter={(event) => {
-            // cor do agendamento - evento
             if (view !== "agenda") {
               return {
                 style: {
@@ -174,7 +160,7 @@ const Agendamentos = () => {
                 },
               };
             }
-            return {}; // agenda mantém padrão
+            return {};
           }}
           style={{ minHeight: "600px", height: "calc(100vh - 220px)" }}
           messages={{
@@ -193,7 +179,6 @@ const Agendamentos = () => {
         />
       </div>
 
-      {/* ==== ESTILIZAÇÃO DO DIA ATUAL ==== */}
       <style>{`
         .rbc-today {
           background-color: rgba(35, 34, 31, 0.21); /* Amarelo suave */

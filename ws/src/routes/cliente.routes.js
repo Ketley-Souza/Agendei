@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const Cliente = require('../models/cliente');
 const StatusCliente = require('../models/relations/statusCliente');
 
-// Criar cliente e vincular ao salão
 router.post('/', async (req, res) => {
     const db = mongoose.connection;
     const session = await db.startSession();
@@ -27,7 +26,6 @@ router.post('/', async (req, res) => {
         
         let newClient = null;
 
-        // Verifica se o cliente já existe pelo email ou telefone
         const existentClient = await Cliente.findOne({
             $or: [
                 { email: cliente.email },
@@ -35,20 +33,17 @@ router.post('/', async (req, res) => {
             ],
         });
 
-        // Se não existir, cria novo cliente
         if (!existentClient) {
             newClient = await new Cliente(cliente).save({ session });
         }
 
         const clienteId = existentClient ? existentClient._id : newClient._id;
 
-        // Verifica se já existe vínculo entre salão e cliente
         const existentRelationship = await StatusCliente.findOne({
             salaoId,
             clienteId,
         });
 
-        // Se não existir, cria novo vínculo
         if (!existentRelationship) {
             await new StatusCliente({
                 salaoId,
@@ -57,7 +52,6 @@ router.post('/', async (req, res) => {
             }).save({ session });
         }
 
-        // Se já existe e está "Indisponivel", reativa para "Disponivel"
         if (existentRelationship && existentRelationship.status === 'Indisponivel') {
             await StatusCliente.findOneAndUpdate(
                 { salaoId, clienteId },
@@ -69,7 +63,6 @@ router.post('/', async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
-        // Retorna mensagens adequadas
         if (
             existentRelationship &&
             existentRelationship.status === 'Disponivel' &&
@@ -86,7 +79,6 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Filtrar clientes
 router.post('/filter', async (req, res) => {
     try {
         const clientes = await Cliente.find(req.body.filters);
@@ -96,12 +88,10 @@ router.post('/filter', async (req, res) => {
     }
 });
 
-// Listar clientes de um salão
 router.get('/salao/:salaoId', async (req, res) => {
     try {
         const { salaoId } = req.params;
 
-        // Validação de ObjectId
         if (!mongoose.Types.ObjectId.isValid(salaoId)) {
             return res.status(400).json({ error: true, message: 'salaoId inválido' });
         }
@@ -118,7 +108,6 @@ router.get('/salao/:salaoId', async (req, res) => {
             clientes: clientes.map((c) => ({
                 ...c.clienteId._doc,
                 vinculoId: c._id,
-                // Formatando a data nativamente (sem moment)
                 dataCadastro: new Date(c.dataCadastro).toLocaleDateString('pt-BR'),
             })),
         });
@@ -127,12 +116,10 @@ router.get('/salao/:salaoId', async (req, res) => {
     }
 });
 
-// Desvincular cliente (tornar Indisponivel)
 router.delete('/vinculo/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        //Validando
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: true, message: 'ID inválido' });
         }

@@ -20,16 +20,9 @@ import {
 } from 'rsuite';
 import { toast, Toaster } from 'react-hot-toast';
 
-//Foto colaborador
 const FotoColaborador = ({ foto, nome }) => {
     const [imageError, setImageError] = useState(false);
-    const fotoUrl = foto
-        ? foto.startsWith('http') || foto.startsWith('/uploads')
-            ? foto.startsWith('http')
-                ? foto
-                : `${util.baseURL}${foto}`
-            : foto
-        : null;
+    const fotoUrl = foto && foto.startsWith('http') ? foto : null;
 
     return (
         <div className="flex items-center justify-center w-full h-full py-2">
@@ -59,6 +52,7 @@ const Colaboradores = () => {
     );
     const fileInputRef = useRef(null);
     const [fotoPreview, setFotoPreview] = useState(null);
+    const [fotoFile, setFotoFile] = useState(null); // Estado local para o File
 
     // === Funções utilitárias ===
     const limparTelefone = (value) => value.replace(/\D/g, '');
@@ -111,9 +105,9 @@ const Colaboradores = () => {
         dispatch(updateColaborador({ colaborador: colaboradorFormatado }));
 
         if (behavior === 'create') {
-            dispatch(addColaborador());
+            dispatch(addColaborador(fotoFile));
         } else {
-            dispatch(saveColaborador());
+            dispatch(saveColaborador(fotoFile));
         }
         
         setComponents('drawer', false);
@@ -125,15 +119,8 @@ const Colaboradores = () => {
     };
 
     const onRowClick = (colab) => {
-        // Validando
         const especialidadesParaEdicao = (colab.especialidadesIds || colab.especialidades || []).map(id => String(id));
-        const fotoUrl = colab.foto
-            ? colab.foto.startsWith('http') || colab.foto.startsWith('/uploads')
-                ? colab.foto.startsWith('http')
-                    ? colab.foto
-                    : `${util.baseURL}${colab.foto}`
-                : colab.foto
-            : null;
+        const fotoUrl = colab.foto && colab.foto.startsWith('http') ? colab.foto : null;
         setFotoPreview(fotoUrl);
         dispatch(updateColaborador({ 
             colaborador: { ...colab, especialidades: especialidadesParaEdicao }, 
@@ -165,8 +152,8 @@ const Colaboradores = () => {
             };
             reader.readAsDataURL(file);
 
-            // Armazenar o arquivo no estado do colaborador (será enviado via FormData)
-            setColaborador('fotoFile', file);
+            // Armazenar File no estado local (não no Redux)
+            setFotoFile(file);
         }
     };
 
@@ -176,7 +163,7 @@ const Colaboradores = () => {
 
     const handleRemoveFoto = () => {
         setFotoPreview(null);
-        setColaborador('fotoFile', null);
+        setFotoFile(null);
         setColaborador('foto', '');
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -205,7 +192,6 @@ const Colaboradores = () => {
         <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
             <Toaster position="top-right" />
 
-            {/* Cabeçalho */}
             <div className="flex justify-between items-center mb-10">
                 <h2 className="text-2xl font-catamaran  font-semibold">Colaboradores</h2>
                 <button
@@ -213,6 +199,7 @@ const Colaboradores = () => {
                         dispatch(resetColaborador());
                         dispatch(updateColaborador({ behavior: 'create' }));
                         setFotoPreview(null);
+                        setFotoFile(null);
                         if (fileInputRef.current) {
                             fileInputRef.current.value = '';
                         }
@@ -224,7 +211,6 @@ const Colaboradores = () => {
                 </button>
             </div>
 
-            {/* Tabela */}
             <TableComponent
                 data={colaboradores || []} 
                 rows={colaboradores || []}
@@ -281,7 +267,6 @@ const Colaboradores = () => {
                 onRowClick={onRowClick}
             />
 
-            {/* Drawer */}
             <Drawer
                 open={components.drawer}
                 size="sm"
@@ -309,7 +294,6 @@ const Colaboradores = () => {
                     )}
 
                     <div className="space-y-3 mt-4">
-                        {/* Campo Foto */}
                         <div>
                             <label className="block text-sm font-medium mb-2">
                                 Foto do Colaborador
@@ -385,7 +369,7 @@ const Colaboradores = () => {
                         <input
                             type="date"
                             className="rs-input w-full"
-                            value={colaborador.dataNascimento}
+                            value={colaborador.dataNascimento ? colaborador.dataNascimento.split('T')[0] : ''}
                             onChange={(e) => setColaborador('dataNascimento', e.target.value)}
                         />
                         <select
@@ -398,7 +382,6 @@ const Colaboradores = () => {
                             <option value="Feminino">Feminino</option>
                         </select>
 
-                        {/* Especialidades */}
                         <div>
                             <label className="block text-sm font-medium mb-2">
                                 Especialidades (Serviços)
@@ -420,8 +403,10 @@ const Colaboradores = () => {
                             >
                                 {servicos && servicos.length > 0 ? (
                                     servicos.map((serv) => {
-                                        const servId = String(serv.value || serv._id);
-                                        const servNome = serv.label || serv.nomeServico || 'Serviço sem nome';
+                                        if (!serv) return null; // Proteção contra valores nulos
+                                        const servId = String(serv.value || serv._id || '');
+                                                const servNome = serv.label || serv.nomeServico || 'Serviço sem nome';
+                                        if (!servId) return null;
                                         return (
                                             <option key={servId} value={servId}>
                                                 {servNome}
@@ -478,7 +463,6 @@ const Colaboradores = () => {
                 </Drawer.Body>
             </Drawer>
 
-            {/* Modal de confirmação */}
             <Modal
                 open={components.confirmDelete}
                 onClose={() => setComponents('confirmDelete', false)}

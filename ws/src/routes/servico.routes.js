@@ -1,39 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const Servico = require('../models/servico');
-
-// CONFIGURAÇÃO DO MULTER 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // Caminho da pasta onde os arquivos serão salvos
-        const dir = path.join(__dirname, '..', '..', 'uploads', 'servicos');
-
-        // Cria a pasta se não existir
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        // Gera nome único pra evitar conflito
-        const uniqueName = `${Date.now()}-${file.originalname}`;
-        cb(null, uniqueName);
-    },
-});
+const { servicoStorage } = require('../config/cloudinary');
 
 const upload = multer({
-    storage,
+    storage: servicoStorage,
     limits: { fileSize: 5 * 1024 * 1024 }, // limite: 5MB
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|webp/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
 
-        if (extname && mimetype) {
+        if (mimetype) {
             cb(null, true);
         } else {
             cb(new Error('Apenas imagens (JPEG, JPG, PNG, WEBP) são permitidas.'));
@@ -41,23 +19,17 @@ const upload = multer({
     },
 });
 
-// CRIAR SERVIÇO
 router.post('/', upload.single('imagem'), async (req, res) => {
     try {
-        //Pra testar com o Thunder
-        let jsonServico;
         
         if (req.body.servico) {
-            //Formdata
             jsonServico = typeof req.body.servico === 'string' 
                 ? JSON.parse(req.body.servico) 
                 : req.body.servico;
         } else {
-            //Json puro
             jsonServico = req.body;
         }
 
-        //Validação
         if (!jsonServico.nomeServico || !jsonServico.preco || !jsonServico.duracao || !req.body.salaoId) {
             return res.status(400).json({ 
                 error: true, 
@@ -69,7 +41,7 @@ router.post('/', upload.single('imagem'), async (req, res) => {
         }
 
         jsonServico.salaoId = req.body.salaoId;
-        jsonServico.imagem = req.file ? `/uploads/servicos/${req.file.filename}` : null;
+        jsonServico.imagem = req.file ? req.file.path : null;
 
         const servico = await new Servico(jsonServico).save();
 
@@ -80,11 +52,9 @@ router.post('/', upload.single('imagem'), async (req, res) => {
     }
 });
 
-// LISTAR SERVIÇOS
 router.get('/salao/:salaoId', async (req, res) => {
     try {
         const { salaoId } = req.params;
-        //Validando
         if (!require('mongoose').Types.ObjectId.isValid(salaoId)) {
             return res.status(400).json({ error: true, message: 'salaoId inválido' });
         }
@@ -98,9 +68,7 @@ router.get('/salao/:salaoId', async (req, res) => {
         return res.status(500).json({ error: true, message: err.message });
     }
 });
-/*=====
-ATUALIZAR SERVIÇO
-=====*/  
+
 router.put('/:id', upload.single('imagem'), async (req, res) => {
     try {
         const { id } = req.params;
@@ -109,7 +77,6 @@ router.put('/:id', upload.single('imagem'), async (req, res) => {
             return res.status(400).json({ error: true, message: 'ID inválido' });
         }
         
-        //Aceitando Json e Formdata
         let jsonServico;
         if (req.body.servico) {
             jsonServico = typeof req.body.servico === 'string' 
@@ -119,9 +86,8 @@ router.put('/:id', upload.single('imagem'), async (req, res) => {
             jsonServico = req.body;
         }
         
-        //Atualizar imagem
         if (req.file) {
-            jsonServico.imagem = `/uploads/servicos/${req.file.filename}`;
+            jsonServico.imagem = req.file.path;
         }
         
         const servico = await Servico.findByIdAndUpdate(id, jsonServico, { new: true });
@@ -134,9 +100,7 @@ router.put('/:id', upload.single('imagem'), async (req, res) => {
         return res.status(500).json({ error: true, message: err.message });
     }
 });
-/*=====
-DELETAR SERVIÇO
-=====*/
+
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;

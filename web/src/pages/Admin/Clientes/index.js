@@ -24,7 +24,6 @@ const Clientes = () => {
         (state) => state.cliente
     );
 
-    // === Funções utilitárias ===
     const limparTelefone = (value) => value.replace(/\D/g, '');
 
     const formatarTelefone = (value) => {
@@ -94,7 +93,6 @@ const Clientes = () => {
         <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
             <Toaster position="top-center" />
 
-            {/* Cabeçalho */}
             <div className="flex justify-between items-center mb-10">
                 <h2 className="text-2xl font-catamaran font-semibold">Clientes</h2>
                 <button
@@ -109,7 +107,6 @@ const Clientes = () => {
                 </button>
             </div>
 
-            {/* Tabela */}
             <TableComponent
                 data={clientes || []} 
                 rows={clientes || []}
@@ -132,7 +129,6 @@ const Clientes = () => {
                 onRowClick={onRowClick}
             />
 
-            {/* Drawer */}
             <Drawer
                 open={components.drawer}
                 size="sm"
@@ -223,7 +219,6 @@ const Clientes = () => {
                 </Drawer.Body>
             </Drawer>
 
-            {/* Modal de confirmação */}
             <Modal
                 open={components.confirmDelete}
                 onClose={() => setComponents('confirmDelete', false)}

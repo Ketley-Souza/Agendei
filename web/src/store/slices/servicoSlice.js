@@ -51,7 +51,7 @@ export const allServicos = createAsyncThunk(
 
 export const addServico = createAsyncThunk(
     'servico/addServico',
-    async (_, { getState, dispatch }) => {
+    async (imagemFile, { getState, dispatch }) => {
         const { servico, form, components } = getState().servico;
         dispatch(updateServico({ form: { ...form, saving: true } }));
 
@@ -69,8 +69,8 @@ export const addServico = createAsyncThunk(
                 status: 'Disponivel',
             }));
             
-            if (servico.imagemFile) {
-                formData.append('imagem', servico.imagemFile);
+            if (imagemFile) {
+                formData.append('imagem', imagemFile);
             }
 
             const res = await api.post('/servico', formData, {
@@ -97,26 +97,25 @@ export const addServico = createAsyncThunk(
 
 export const saveServico = createAsyncThunk(
     'servico/saveServico',
-    async (_, { getState, dispatch }) => {
+    async (imagemFile, { getState, dispatch }) => {
         const { servico, form, components } = getState().servico;
         dispatch(updateServico({ form: { ...form, saving: true } }));
 
         try {
-            const { imagemFile, ...servicoData } = servico;
             let res;
 
             //Padronizando preço
-            const precoNum = parseFloat(servicoData.preco.toString().replace(',', '.'));
+            const precoNum = parseFloat(servico.preco.toString().replace(',', '.'));
 
             if (imagemFile) {
                 //Imagem em formdata
                 const formData = new FormData();
                 formData.append('servico', JSON.stringify({
-                    nomeServico: servicoData.nomeServico,
+                    nomeServico: servico.nomeServico,
                     preco: precoNum,
-                    duracao: servicoData.duracao,
-                    descricao: servicoData.descricao,
-                    status: servicoData.status || 'Disponivel',
+                    duracao: servico.duracao,
+                    descricao: servico.descricao,
+                    status: servico.status || 'Disponivel',
                 }));
                 formData.append('imagem', imagemFile);
 
@@ -126,11 +125,11 @@ export const saveServico = createAsyncThunk(
             } else {
                 //Json
                 res = await api.put(`/servico/${servico._id}`, {
-                    nomeServico: servicoData.nomeServico,
+                    nomeServico: servico.nomeServico,
                     preco: precoNum,
-                    duracao: servicoData.duracao,
-                    descricao: servicoData.descricao,
-                    status: servicoData.status || 'Disponivel',
+                    duracao: servico.duracao,
+                    descricao: servico.descricao,
+                    status: servico.status || 'Disponivel',
                 });
             }
 

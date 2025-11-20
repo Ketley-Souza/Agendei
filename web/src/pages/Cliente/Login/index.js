@@ -18,8 +18,7 @@ export default function Login() {
         }
         const result = await dispatch(fazerLogin({ email, senha }));
         if (fazerLogin.fulfilled.match(result)) {
-            const usuario = result.payload; 
-            //Redireciona baseado no tipo de login
+            const usuario = result.payload;
             if (usuario.tipo === 'salao') {
                 navigate('/servicos');
             } else if (usuario.tipo === 'colaborador') {
@@ -34,16 +33,13 @@ export default function Login() {
             className="relative h-screen w-full bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: "url('/salao-login3.jpg')" }}
         >
-            {/* Overlay escuro para contraste */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            {/* Modal de login */}
             <div className="absolute inset-0 flex items-center justify-center px-4">
                 <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-10 w-full max-w-md min-h-[480px] flex flex-col justify-center">
                     <h2 className="text-3xl font-semibold text-center mb-8 text-gray-800">
                         Faça login
                     </h2>
                     <form className="space-y-6" onSubmit={handleSubmit}>
-                        {/* Campos de entrada */}
                         <div className="relative">
                             <input
                                 id="email"

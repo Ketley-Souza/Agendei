@@ -19,16 +19,9 @@ import {
 } from 'rsuite';
 import { toast, Toaster } from 'react-hot-toast';
 
-// Componente para exibir imagem do serviço
 const ImagemServico = ({ imagem, nome }) => {
     const [imageError, setImageError] = useState(false);
-    const imagemUrl = imagem
-        ? imagem.startsWith('http') || imagem.startsWith('/uploads')
-            ? imagem.startsWith('http')
-                ? imagem
-                : `${util.baseURL}${imagem}`
-            : imagem
-        : null;
+    const imagemUrl = imagem && imagem.startsWith('http') ? imagem : null;
 
     return (
         <div className="flex items-center justify-center w-full h-full py-2">
@@ -58,6 +51,7 @@ const Servicos = () => {
     );
     const fileInputRef = useRef(null);
     const [imagemPreview, setImagemPreview] = useState(null);
+    const [imagemFile, setImagemFile] = useState(null);
 
     const setServico = (key, value) => {
         dispatch(
@@ -118,9 +112,9 @@ const Servicos = () => {
         dispatch(updateServico({ servico: servicoFormatado }));
 
         if (behavior === 'create') {
-            dispatch(addServico());
+            dispatch(addServico(imagemFile));
         } else {
-            dispatch(saveServico());
+            dispatch(saveServico(imagemFile));
         }
 
         setComponents('drawer', false);
@@ -132,13 +126,7 @@ const Servicos = () => {
     };
 
     const onRowClick = (serv) => {
-        const imagemUrl = serv.imagem
-            ? serv.imagem.startsWith('http') || serv.imagem.startsWith('/uploads')
-                ? serv.imagem.startsWith('http')
-                    ? serv.imagem
-                    : `${util.baseURL}${serv.imagem}`
-                : serv.imagem
-            : null;
+        const imagemUrl = serv.imagem && serv.imagem.startsWith('http') ? serv.imagem : null;
         setImagemPreview(imagemUrl);
         dispatch(updateServico({ servico: serv, behavior: 'update' }));
         setComponents('drawer', true);
@@ -167,8 +155,8 @@ const Servicos = () => {
             };
             reader.readAsDataURL(file);
 
-            // Armazenar o arquivo
-            setServico('imagemFile', file);
+            // Armazenar File no estado local (não no Redux)
+            setImagemFile(file);
         }
     };
 
@@ -178,7 +166,7 @@ const Servicos = () => {
 
     const handleRemoveImagem = () => {
         setImagemPreview(null);
-        setServico('imagemFile', null);
+        setImagemFile(null);
         setServico('imagem', '');
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -193,7 +181,6 @@ const Servicos = () => {
         <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
             <Toaster position="top-right" />
 
-            {/* Cabeçalho */}
             <div className="flex justify-between items-center mb-10">
                 <h2 className="text-2xl font-catamaran font-semibold">Serviços</h2>
                 <button
@@ -201,6 +188,7 @@ const Servicos = () => {
                         dispatch(resetServico());
                         dispatch(updateServico({ behavior: 'create' }));
                         setImagemPreview(null);
+                        setImagemFile(null);
                         if (fileInputRef.current) {
                             fileInputRef.current.value = '';
                         }
@@ -212,7 +200,6 @@ const Servicos = () => {
                 </button>
             </div>
 
-            {/* Tabela */}
             <TableComponent
                 data={servicos || []}
                 rows={servicos || []}
@@ -250,7 +237,6 @@ const Servicos = () => {
                 onRowClick={onRowClick}
             />
 
-            {/* Drawer */}
             <Drawer
                 open={components.drawer}
                 size="md"
@@ -278,7 +264,6 @@ const Servicos = () => {
                     )}
 
                     <div className="space-y-3 mt-4">
-                        {/* Campo de Upload de Imagem */}
                         <div>
                             <label className="block text-sm font-medium mb-2">
                                 Imagem do Serviço
@@ -429,7 +414,6 @@ const Servicos = () => {
                 </Drawer.Body>
             </Drawer>
 
-            {/* Modal de confirmação */}
             <Modal
                 open={components.confirmDelete}
                 onClose={() => setComponents('confirmDelete', false)}

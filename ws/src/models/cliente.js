@@ -27,6 +27,10 @@ const cliente = new Schema({
       type: String,
       required: true
    },
+   foto: {
+      type: String,
+      default: ''
+   },
    status: {
       type: String,
       required: true,

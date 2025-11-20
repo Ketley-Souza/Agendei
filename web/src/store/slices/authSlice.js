@@ -43,7 +43,29 @@ export const cadastrarCliente = createAsyncThunk(
     'auth/cadastrarCliente',
     async (dadosCliente, { rejectWithValue }) => {
         try {
-            const res = await api.post('/auth/cadastro', dadosCliente);
+            const { foto, ...dados } = dadosCliente;
+            
+            // Se tem foto (File), fazer upload primeiro
+            let fotoUrl = '';
+            if (foto && foto instanceof File) {
+                const formData = new FormData();
+                formData.append('foto', foto);
+                
+                const uploadRes = await api.post('/cliente/upload-foto', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                
+                if (!uploadRes.data.error) {
+                    fotoUrl = uploadRes.data.fotoUrl;
+                }
+            }
+            
+            // Cadastrar cliente com URL da foto
+            const res = await api.post('/auth/cadastro', {
+                ...dados,
+                foto: fotoUrl
+            });
+            
             if (res.data.error) {
                 toast.error(res.data.message);
                 return rejectWithValue(res.data.message);

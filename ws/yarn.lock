@@ -179,6 +179,7 @@ __metadata:
   resolution: "back_end@workspace:."
   dependencies:
     bcryptjs: "npm:^3.0.3"
+    cloudinary: "npm:^2.8.0"
     cors: "npm:^2.8.5"
     date-fns: "npm:^4.1.0"
     dotenv: "npm:^17.2.3"
@@ -186,6 +187,7 @@ __metadata:
     mongoose: "npm:^8.19.2"
     morgan: "npm:^1.10.1"
     multer: "npm:^2.0.2"
+    multer-storage-cloudinary: "npm:^4.0.0"
     nodemon: "npm:^3.1.10"
     react-day-picker: "npm:^9.11.1"
   languageName: unknown
@@ -361,6 +363,16 @@ __metadata:
   version: 3.0.0
   resolution: "chownr@npm:3.0.0"
   checksum: 10c0/43925b87700f7e3893296c8e9c56cc58f926411cce3a6e5898136daaf08f08b9a8eb76d37d3267e707d0dcc17aed2e2ebdf5848c0c3ce95cf910a919935c1b10
+  languageName: node
+  linkType: hard
+
+"cloudinary@npm:^2.8.0":
+  version: 2.8.0
+  resolution: "cloudinary@npm:2.8.0"
+  dependencies:
+    lodash: "npm:^4.17.21"
+    q: "npm:^1.5.1"
+  checksum: 10c0/67e1830f5ab5d9378c021a2057d54d09757df3487f43015fa83885240055ad6ba193ef2392fa104ffa498e32b4e1e378da30661364b65dec81b159b58225f790
   languageName: node
   linkType: hard
 
@@ -1014,6 +1026,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash@npm:^4.17.21":
+  version: 4.17.21
+  resolution: "lodash@npm:4.17.21"
+  checksum: 10c0/d8cbea072bb08655bb4c989da418994b073a608dffa608b09ac04b43a791b12aeae7cd7ad919aa4c925f33b48490b5cfe6c1f71d827956071dae2e7bb3a6b74c
+  languageName: node
+  linkType: hard
+
 "lru-cache@npm:^10.0.1, lru-cache@npm:^10.2.0":
   version: 10.4.3
   resolution: "lru-cache@npm:10.4.3"
@@ -1321,6 +1340,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"multer-storage-cloudinary@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "multer-storage-cloudinary@npm:4.0.0"
+  peerDependencies:
+    cloudinary: ^1.21.0
+  checksum: 10c0/febbed4bbb6153b7db04c2574e43d446a8fdd9fed731928ffa6afee8f2495acaeb72e09cf785efa34848bcf415cca95532a664f80e93b901f4181babf44ee00b
+  languageName: node
+  linkType: hard
+
 "multer@npm:^2.0.2":
   version: 2.0.2
   resolution: "multer@npm:2.0.2"
@@ -1546,6 +1574,13 @@ __metadata:
   version: 2.3.1
   resolution: "punycode@npm:2.3.1"
   checksum: 10c0/14f76a8206bc3464f794fb2e3d3cc665ae416c01893ad7a02b23766eb07159144ee612ad67af5e84fa4479ccfe67678c4feb126b0485651b302babf66f04f9e9
+  languageName: node
+  linkType: hard
+
+"q@npm:^1.5.1":
+  version: 1.5.1
+  resolution: "q@npm:1.5.1"
+  checksum: 10c0/7855fbdba126cb7e92ef3a16b47ba998c0786ec7fface236e3eb0135b65df36429d91a86b1fff3ab0927b4ac4ee88a2c44527c7c3b8e2a37efbec9fe34803df4
   languageName: node
   linkType: hard
 

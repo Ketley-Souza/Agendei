@@ -12,15 +12,10 @@ const Servico = require('../models/servico');
 const Colaborador = require('../models/colaborador');
 const util = require('../util');
 
-// -----------------------------
-// FILTRAR AGENDAMENTOS
-// -----------------------------
-
 router.post('/filter', async (req, res) => {
     try {
         const { range, salaoId, clienteId } = req.body;
 
-        // Monta query base com salão e intervalo de datas
         const query = {
             salaoId,
             data: {
@@ -29,7 +24,6 @@ router.post('/filter', async (req, res) => {
             },
         };
 
-        // Se foi enviado clienteId, filtra também pelo cliente
         if (clienteId) {
             query.clienteId = clienteId;
         }
@@ -47,9 +41,6 @@ router.post('/filter', async (req, res) => {
     }
 });
 
-// -----------------------------
-// CRIAR AGENDAMENTO (ajustado para UTC−3)
-// -----------------------------
 router.post('/', async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -57,13 +48,8 @@ router.post('/', async (req, res) => {
     try {
         const { clienteId, salaoId, servicoId, servicosAdicionais, colaboradorId, data } = req.body;
 
-        console.log('Recebido para agendar:', { clienteId, salaoId, servicoId, servicosAdicionais, colaboradorId, data });
-
-        // === USA UTIL PARA CONVERSÕES PADRONIZADAS ===
-        // data vem como ISO local: "2025-11-15T12:00:00" (SEM Z)
         const dataLocal = data ? new Date(data) : null;
 
-        // === VALIDAÇÕES ===
         const cliente = await Cliente.findById(clienteId).select('nome endereco');
         const salao = await Salao.findById(salaoId).select('nome');
         const servico = await Servico.findById(servicoId).select('nomeServico preco duracao');
@@ -72,7 +58,6 @@ router.post('/', async (req, res) => {
         if (!cliente || !salao || !servico || !colaborador)
             throw new Error('Dados inválidos para criar o agendamento.');
 
-        //Buscar outros serviçõs
         let servicosAdicionaisData = [];
         let precoTotal = servico.preco;
 
@@ -81,11 +66,9 @@ router.post('/', async (req, res) => {
                 _id: { $in: servicosAdicionais }
             }).select('nomeServico preco duracao');
 
-            //Somar preço total
             precoTotal += servicosAdicionaisData.reduce((sum, s) => sum + s.preco, 0);
         }
 
-        // === CRIA E SALVA AGENDAMENTO ===
         const novoAgendamento = new Agendamento({
             salaoId,
             clienteId,
@@ -102,7 +85,6 @@ router.post('/', async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
-        // Retornar com populate
         const agendamentoPopulado = await Agendamento.findById(novoAgendamento._id)
             .populate('servicoId', 'nomeServico duracao preco')
             .populate('servicosAdicionais', 'nomeServico duracao preco')
@@ -117,9 +99,6 @@ router.post('/', async (req, res) => {
     }
 });
 
-// ---------------------------------------------
-// ROTA REAL DE CANCELAMENTO
-// ---------------------------------------------
 router.put('/cancelar/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -132,7 +111,7 @@ router.put('/cancelar/:id', async (req, res) => {
             });
         }
 
-        agendamento.status = 'I'; // I = Inativo/Cancelado
+        agendamento.status = 'I';
         await agendamento.save();
 
         return res.json({
@@ -149,12 +128,6 @@ router.put('/cancelar/:id', async (req, res) => {
     }
 });
 
-
-
-
-// -----------------------------
-// DIAS DISPONÍVEIS (inalterado)
-// -----------------------------
 router.post('/dias-disponiveis', async (req, res) => {
     try {
         const { data, salaoId, servicoId } = req.body;
@@ -165,8 +138,7 @@ router.post('/dias-disponiveis', async (req, res) => {
         let agenda = [];
         let lastDay = new Date(data);
 
-        const servicoDuracao = servico.duracao; // já está em minutos
-
+        const servicoDuracao = servico.duracao;
 
         for (let i = 0; i <= 365 && agenda.length <= 7; i++) {
             const diaSemana = getDay(lastDay);
@@ -254,23 +226,14 @@ router.post('/disponibilidade', async (req, res) => {
         const dataSelecionada = new Date(data);
         const diaSemana = getDay(dataSelecionada);
 
-        // ----------------------------------------
-        // 1. BUSCAR SERVIÇOS PARA CALCULAR DURAÇÃO TOTAL
-        // ----------------------------------------
         const servicosInfo = await Servico.find({ _id: { $in: servicos } })
             .select("duracao");
 
         let duracaoTotal = 0;
         servicosInfo.forEach(s => {
             duracaoTotal += s.duracao;
-            console.log("DURAÇÃO TOTAL EM MINUTOS =", duracaoTotal);
-            console.log("SERVIÇOS ENVIADOS =", servicos);
-
         });
 
-        // ----------------------------------------
-        // 2. BUSCAR AS JANELAS DE TRABALHO PARA O DIA
-        // ----------------------------------------
         const janelas = await Horario.find({
             salaoId,
             dias: diaSemana,
@@ -285,9 +248,6 @@ router.post('/disponibilidade', async (req, res) => {
             });
         }
 
-        // ----------------------------------------
-        // 3. GERAR SLOTS PARA CADA COLABORADOR
-        // ----------------------------------------
         const colaboradoresSlots = {};
 
         for (let janela of janelas) {
@@ -305,9 +265,6 @@ router.post('/disponibilidade', async (req, res) => {
             }
         }
 
-        // ----------------------------------------
-        // 4. REMOVER HORÁRIOS OCUPADOS (AGENDAMENTOS EXISTENTES)
-        // ----------------------------------------
         const inicioDia = startOfDay(dataSelecionada);
         const fimDia = endOfDay(dataSelecionada);
 
@@ -330,10 +287,6 @@ router.post('/disponibilidade', async (req, res) => {
             }
         }
 
-
-        // ----------------------------------------
-        // 5. REMOVER COLABORADORES SEM HORÁRIO DISPONÍVEL
-        // ----------------------------------------
         const colaboradoresValidos = Object.keys(colaboradoresSlots)
             .filter(cid => colaboradoresSlots[cid].length > 0);
 
@@ -346,9 +299,6 @@ router.post('/disponibilidade', async (req, res) => {
             });
         }
 
-        // ----------------------------------------
-        // 6. BUSCAR DADOS DOS COLABORADORES
-        // ----------------------------------------
         let colaboradores = await Colaborador.find({
             _id: { $in: colaboradoresValidos }
         }).select("nome foto email");
@@ -359,10 +309,6 @@ router.post('/disponibilidade', async (req, res) => {
             duracaoTotal
         }));
 
-
-        // ----------------------------------------
-        // 7. SELEÇÃO DO COLABORADOR
-        // ----------------------------------------
         let colaboradorEscolhido = null;
 
         if (colaboradorId && colaboradoresValidos.includes(colaboradorId)) {
@@ -372,7 +318,6 @@ router.post('/disponibilidade', async (req, res) => {
         }
 
         const horariosDisponiveis = colaboradoresSlots[colaboradorEscolhido] || [];
-
 
         return res.json({
             error: false,

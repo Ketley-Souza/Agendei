@@ -1,10 +1,12 @@
-// src/pages/Agendamento.jsx
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { allServicos } from "../../../store/slices/servicoSlice";
+import { useNavigate } from "react-router-dom";
 import CONSTS from "../../../consts";
-import { Calendar, CaretDown } from "@phosphor-icons/react";
-import EspecialistaPicker from "../../../components/EspecialistaPicker";
+import { allServicos } from "../../../store/slices/servicoSlice";
+import EspecialistaPicker from "../../../components/Agendamento/EspecialistaPicker";
+import DrawerServicos from "../../../components/Agendamento/DrawerServicos";
+import CardDataHorario from "../../../components/Agendamento/CardDataHorario";
+import util from "../../../services/util";
 
 
 import {
@@ -13,14 +15,11 @@ import {
   setServicosSelecionados,
 } from "../../../store/slices/salaoSlice";
 
-import DrawerServicos from "../../../components/DrawerServicos";
-import CardDataHorario from "../../../components/CardDataHorario";
-import util from "../../../services/util";
 
 export default function Agendamento() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  // Redux
   const servicos = useSelector((state) => state.servico.servicos);
   const servicosSelecionados = useSelector((state) => state.salao.servicosSelecionados);
   const dataSelecionada = useSelector((state) => state.salao.dataSelecionada);
@@ -29,23 +28,16 @@ export default function Agendamento() {
   const colaboradoresDisponiveis = useSelector((state) => state.salao.colaboradoresDisponiveis);
   const horaSelecionada = useSelector((state) => state.salao.horaSelecionada);
 
-  // Pré-selecionado vindo da Home
   const servicoPreSelecionado = useSelector(
     (state) => state.salao.servicoPreSelecionado
   );
 
   const [drawerOpen, setDrawerOpen] = useState(true);
 
-  /* ===========================
-     1) Buscar serviços
-  =========================== */
   useEffect(() => {
     dispatch(allServicos());
   }, [dispatch]);
 
-  /* ===========================
-     2) Aplicar serviço vindo da Home
-  =========================== */
   useEffect(() => {
     if (servicoPreSelecionado) {
       dispatch(setServicosSelecionados([servicoPreSelecionado]));
@@ -63,9 +55,6 @@ export default function Agendamento() {
     }
   }, [servicoPreSelecionado, dispatch]);
 
-  /* ===========================
-     3) Seleção de serviços via Drawer
-  =========================== */
   const handleSelecionarServicos = (selecionados) => {
     dispatch(setServicosSelecionados(selecionados));
 
@@ -92,9 +81,6 @@ export default function Agendamento() {
     setDrawerOpen(false);
   };
 
-  /* ===========================
-     4) Alterar data
-  =========================== */
   const handleChangeDate = (novaData) => {
     dispatch(
       updateAgendamento({
@@ -105,9 +91,6 @@ export default function Agendamento() {
     dispatch(fetchDisponibilidade());
   };
 
-  /* ===========================
-     5) Selecionar colaborador
-  =========================== */
   const handleSelectColaborador = (colabId) => {
     dispatch(
       updateAgendamento({
@@ -118,9 +101,6 @@ export default function Agendamento() {
     dispatch(fetchDisponibilidade());
   };
 
-  /* ===========================
-     6) Selecionar horário
-  =========================== */
   const handleSelectHora = (hora) => {
     dispatch(
       updateAgendamento({
@@ -130,9 +110,6 @@ export default function Agendamento() {
     );
   };
 
-  /* ===========================
-     7) Confirmar agendamento
-  =========================== */
   const handleAgendar = async () => {
     try {
       if (!servicosSelecionados.length || !colaboradorSelecionado || !horaSelecionada || !dataSelecionada) {
@@ -176,6 +153,7 @@ export default function Agendamento() {
         dispatch(updateAgendamento({ campo: "colaboradorSelecionado", valor: null }));
         dispatch(updateAgendamento({ campo: "horaSelecionada", valor: null }));
         dispatch(updateAgendamento({ campo: "dataSelecionada", valor: util.toLocalISO(new Date()) }));
+        navigate('/agenda');
       }
     } catch (err) {
       console.error(err);
@@ -184,26 +162,22 @@ export default function Agendamento() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center px-4 pt-5 pb-6 overflow-y-auto">
+    <div className="min-h-screen bg-gray-100 flex justify-center px-2 sm:px-4 pt-5 pb-10 overflow-y-auto">
 
-      {/* CARD CENTRALIZADO IGUAL LOGIN */}
       <div
-        className={`bg-white shadow-2xl rounded-2xl p-10 w-full max-w-3xl min-h-[520px] font-catamaran transition-all duration-300
-          ${drawerOpen ? "pb-0" : "pb-[40px]"}
+        className={`bg-white shadow-2xl rounded-2xl py-6 px-8 w-full max-w-3xl min-h-[520px] font-catamaran transition-all duration-300 mb-8
+          ${drawerOpen ? "pb-0" : "pb-30"}
         `}
       >
 
-
-        {/* Título */}
-        <h2 className="text-lg lg:text-3xl font-semibold mb-2 text-center text-gray-800">
+        <h2 className="text-lg lg:text-2xl font-semibold mb-2 text-center text-gray-800">
           Agende um atendimento
         </h2>
 
-        <p className="text-gray-500 text-center mb-8">
+        <p className="text-gray-500 text-center mb-6">
           Selecione data, horário e profissional para concluir seu agendamento
         </p>
 
-        {/* Serviços selecionados */}
         <div className="mb-2">
           <h3 className="text-sm font-medium mb-2">Serviços Selecionados</h3>
 
@@ -223,7 +197,6 @@ export default function Agendamento() {
 
                     <div>
                       <p className="font-semibold text-gray-800">
-                        {index === 0 ? "Principal: " : "Adicional: "}
                         {s.nomeServico ?? s.nome}
                       </p>
                       {s.preco && (
@@ -239,7 +212,6 @@ export default function Agendamento() {
           )}
         </div>
 
-        {/* Datas + horários */}
         {servicosSelecionados.length > 0 && (
           <div className="mb-6">
 
@@ -253,19 +225,16 @@ export default function Agendamento() {
           </div>
         )}
 
-        {/* Colaborador */}
         {servicosSelecionados.length > 0 && (
           <div className="mb-8">
             <EspecialistaPicker
-              colaboradores={colaboradoresDisponiveis}
+              colaboradores={colaboradoresDisponiveis || []}
               selecionado={colaboradorSelecionado}
               onSelect={handleSelectColaborador}
             />
-
           </div>
         )}
 
-        {/* Botão */}
         {servicosSelecionados.length > 0 && (
           <button
             onClick={handleAgendar}
@@ -276,7 +245,6 @@ export default function Agendamento() {
         )}
       </div>
 
-      {/* Drawer */}
       <DrawerServicos
         open={drawerOpen}
         onClose={setDrawerOpen}

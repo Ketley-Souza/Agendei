@@ -167,3 +167,13 @@ select.rs-input:focus-visible {
 .rbc-day-slot .rbc-time-slot {
   border-top: 0 !important;
 }
+
+/* Modern Calendar */
+.modern-calendar {
+  --rdp-accent-color: #CDA327 !important;
+}
+
+.modern-calendar .rdp-nav_button:hover {
+  background-color: #f3f4f6 !important;
+  color: #CDA327 !important;
+}

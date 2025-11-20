@@ -74,33 +74,21 @@ export const allServicos = createAsyncThunk(
 
 export const addColaborador = createAsyncThunk(
     'colaborador/addColaborador',
-    async (_, { getState, dispatch }) => {
+    async (fotoFile, { getState, dispatch }) => {
         const { colaborador, form, components } = getState().colaborador;
         dispatch(updateColaborador({ form: { ...form, saving: true } }));
 
         try {
-            let res;
-            const { fotoFile, ...colaboradorData } = colaborador;
-
+            const formData = new FormData();
             if (fotoFile) {
-                //Formdata
-                const formData = new FormData();
                 formData.append('foto', fotoFile);
-                formData.append('colaborador', JSON.stringify(colaboradorData));
-                formData.append('salaoId', consts.salaoId);
-
-                res = await api.post('/colaborador', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
-            } else {
-                //Json
-                res = await api.post('/colaborador', {
-                    colaborador: colaboradorData,
-                    salaoId: consts.salaoId,
-                });
             }
+            formData.append('colaborador', JSON.stringify(colaborador));
+            formData.append('salaoId', consts.salaoId);
+
+            const res = await api.post('/colaborador', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
 
             dispatch(updateColaborador({ form: { ...form, saving: false } }));
 
@@ -122,29 +110,20 @@ export const addColaborador = createAsyncThunk(
 
 export const saveColaborador = createAsyncThunk(
     'colaborador/saveColaborador',
-    async (_, { getState, dispatch }) => {
+    async (fotoFile, { getState, dispatch }) => {
         const { colaborador, form, components } = getState().colaborador;
         dispatch(updateColaborador({ form: { ...form, saving: true } }));
 
         try {
-            let res;
-            const { fotoFile, ...colaboradorData } = colaborador;
-
+            const formData = new FormData();
             if (fotoFile) {
-                //Formdatra foto nova
-                const formData = new FormData();
                 formData.append('foto', fotoFile);
-                formData.append('colaborador', JSON.stringify(colaboradorData));
-
-                res = await api.put(`/colaborador/${colaborador._id}`, formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
-            } else {
-                //Json
-                res = await api.put(`/colaborador/${colaborador._id}`, colaboradorData);
             }
+            formData.append('colaborador', JSON.stringify(colaborador));
+
+            const res = await api.put(`/colaborador/${colaborador._id}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
 
             dispatch(updateColaborador({ form: { ...form, saving: false } }));
 

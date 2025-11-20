@@ -6,7 +6,6 @@ const Especialidade = require('../models/relations/especialidade');
 
 router.post('/', async (req, res) => {
     try {
-        // VERIFICAR SE EXISTE ALGUM HORARIO, NAQUELE DIA, PRAQUELE SALÃO
         const { salaoId, dias, inicio, fim } = req.body;
 
         //Validamdo
@@ -16,7 +15,6 @@ router.post('/', async (req, res) => {
                 message: 'salaoId, dias (array), inicio e fim são obrigatórios' 
             });
         }
-        //Ver se já tem algo do mesmo tipo marcado apra aquele dia e horário no salão
         const inicioDate = new Date(inicio);
         const fimDate = new Date(fim);
 
@@ -25,17 +23,14 @@ router.post('/', async (req, res) => {
                 salaoId,
                 dias: { $in: [dia] },
                 $or: [
-                    //Começa quando já existe mesmo tipo acontecendo
                     { 
                         inicio: { $lte: inicioDate }, 
                         fim: { $gte: inicioDate } 
                     },
-                    //Termina quando mesmo tipo está acontecendo
                     { 
                         inicio: { $lte: fimDate }, 
                         fim: { $gte: fimDate } 
                     },
-                    //Tenta entrar em um horário inteiro onde o mesmo tipo est´a aconteccendo
                     { 
                         inicio: { $gte: inicioDate }, 
                         fim: { $lte: fimDate } 
@@ -46,13 +41,10 @@ router.post('/', async (req, res) => {
                 return res.json({ 
                     error: true, 
                     message: `Já existe um horário cadastrado para este período no dia da semana ${dia}!` 
-                });
+                }); 
             }
         }
-        //Caso não tenha conflito
-        await new Horario(req.body).save();
-
-        res.json({ error: false });
+        await new Horario(req.body).save();        res.json({ error: false });
     } catch (err) {
         res.json({ error: true, message: err.message });
     }
@@ -61,7 +53,6 @@ router.post('/', async (req, res) => {
 router.get('/salao/:salaoId', async (req, res) => {
     try {
         const { salaoId } = req.params;
-        //Validando
         if (!mongoose.Types.ObjectId.isValid(salaoId)) {
             return res.status(400).json({ error: true, message: 'salaoId inválido' });
         }
@@ -80,8 +71,6 @@ router.put('/:horarioId', async (req, res) => {
     try {
         const { horarioId } = req.params;
         const horario = req.body;
-        //SE NÃO HOUVER, ATUALIZA
-        //Validando
         if (!mongoose.Types.ObjectId.isValid(horarioId)) {
             return res.status(400).json({ error: true, message: 'horarioId inválido' });
         }
@@ -100,7 +89,6 @@ router.put('/:horarioId', async (req, res) => {
 
 router.post('/colaboradores', async (req, res) => {
     try {
-        //Validadno caso de array vazio
         if (!Array.isArray(req.body.servicos) || req.body.servicos.length === 0) {
             return res.json({ 
                 error: true, 
@@ -110,7 +98,7 @@ router.post('/colaboradores', async (req, res) => {
 
         const colaboradores = await Especialidade.find({
             servicoId: { $in: req.body.servicos },
-            status: 'Disponivel', //Disponível e não 'A'
+            status: 'Disponivel',
         })
             .populate('colaboradorId', 'nome')
             .select('colaboradorId -_id');
@@ -134,7 +122,6 @@ router.post('/colaboradores', async (req, res) => {
 router.delete('/:horarioId', async (req, res) => {
     try {
         const { horarioId } = req.params;
-        //validando
         if (!mongoose.Types.ObjectId.isValid(horarioId)) {
             return res.status(400).json({ error: true, message: 'horarioId inválido!' });
         }

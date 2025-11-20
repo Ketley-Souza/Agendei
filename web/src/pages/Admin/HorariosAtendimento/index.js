@@ -22,7 +22,6 @@ import {
 
 import util from "../../../services/util";
 
-// ALTERAÇÃO 
 const colors = [
   "#3498db",
   "#9b59b6",
@@ -34,7 +33,6 @@ const colors = [
   "#f1c40f",
 ];
 
-// -------------------------------------------------------
 const locales = { "pt-BR": ptBR };
 
 const localizer = dateFnsLocalizer({
@@ -46,7 +44,6 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Fake days
 const diasSemanaData = [
   new Date(2025, 3, 13),
   new Date(2025, 3, 14),
@@ -67,9 +64,6 @@ const diasDaSemana = [
   "sábado",
 ];
 
-// -------------------------------------------------------
-// COMPONENTE PRINCIPAL
-// -------------------------------------------------------
 const HorariosAtendimento = () => {
   const dispatch = useDispatch();
   const {
@@ -92,12 +86,9 @@ const HorariosAtendimento = () => {
 
   const onHorarioClick = (item) => {
     dispatch(updateHorario({ horario: item, behavior: "update" }));
-    setComponentsState("drawer", true);
+    setComponentsState('drawer', true);
   };
 
-  // -------------------------------------------------------
-  // SALVAR
-  // -------------------------------------------------------
   const save = () => {
     if (
       !util.allFields(horario, [
@@ -119,7 +110,6 @@ const HorariosAtendimento = () => {
 
   const remove = () => dispatch(removeHorario(horario._id));
 
-  // FORMATAR EVENTOS
   const formatEventos = () => {
     const lista = [];
 
@@ -131,7 +121,7 @@ const HorariosAtendimento = () => {
         lista.push({
           resource: {
             horario: hor,
-            backgroundColor: colors[index % colors.length], // ALTERAÇÃO
+            backgroundColor: colors[index % colors.length],
           },
           title: `${hor.especialidades.length} espec. e ${hor.colaboradores.length} colab.`,
           start: new Date(
@@ -150,30 +140,22 @@ const HorariosAtendimento = () => {
     return lista;
   };
 
-  // -------------------------------------------------------
-  // LOADS INICIAIS
-  // -------------------------------------------------------
   useEffect(() => {
     dispatch(allHorarios());
     dispatch(allServicos());
   }, []);
 
   useEffect(() => {
-    // se não tem especialidades selecionadas → não chama o backend
     if (!horario.especialidades || horario.especialidades.length === 0) {
       dispatch(updateHorario({ colaboradores: [] }));
       return;
-    }// só chama o backend se tiver especialidades
+    }
     dispatch(filterColaboradores());
   }, [horario.especialidades]);
 
-
-  // RENDER
-  // -------------------------------------------------------
   return (
     <div className="p-5 md:p-20 h-full flex flex-col overflow-auto">
 
-      {/* Cabeçalho */}
       <div className="flex justify-between items-center mb-10">
         <h2 className="text-2xl font-catamaran font-semibold">Horários de atendimento</h2>
         <button

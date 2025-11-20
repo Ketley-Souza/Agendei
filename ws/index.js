@@ -1,7 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const morgan = require('morgan');
-const path = require('path');
 const cors = require('cors');
 
 // DATABASE
@@ -12,14 +12,9 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
-//Necessário pro Multer / uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-
 app.set('port', 8000);
 
-/* ROTAS */
+
 app.use('/auth', require('./src/routes/auth.routes'));
 app.use('/agendamento', require('./src/routes/agendamento.routes'));
 app.use('/cliente', require('./src/routes/cliente.routes'));
@@ -27,11 +22,6 @@ app.use('/colaborador', require('./src/routes/colaborador.routes'));
 app.use('/horario', require('./src/routes/horario.routes'));
 app.use('/servico', require('./src/routes/servico.routes'));
 app.use('/salao', require('./src/routes/salao.routes'));
-
-
-// server.js
-
-
 
 
 app.listen(app.get('port'), () => {

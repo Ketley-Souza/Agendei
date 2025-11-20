@@ -3,6 +3,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import HeaderCliente from "../components/HeaderCliente";
 import Agendamento from "../pages/Cliente/Agendamento";
 import Agenda from "../pages/Cliente/Agenda";
+import Perfil from "../pages/Cliente/Perfil";
 
 const ClienteRoutes = () => {
     return (
@@ -30,6 +31,14 @@ const ClienteRoutes = () => {
                         element={
                             <ProtectedRoute requiredType="cliente">
                                 <Agenda />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/perfil"
+                        element={
+                            <ProtectedRoute requiredType="cliente">
+                                <Perfil />
                             </ProtectedRoute>
                         }
                     />

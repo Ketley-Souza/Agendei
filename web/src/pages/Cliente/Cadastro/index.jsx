@@ -1,13 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { cadastrarCliente } from "../../../store/slices/authSlice";
 import { Link } from "react-router-dom";
+import { Camera, X } from "@phosphor-icons/react";
+import toast from "react-hot-toast";
 import CONSTS from "../../../consts";
 
 export default function Cadastro() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
     const { loading } = useSelector((state) => state.auth);
     const [nome, setNome] = useState("");
     const [email, setEmail] = useState("");
@@ -16,6 +19,43 @@ export default function Cadastro() {
     const [sexo, setSexo] = useState("Masculino");
     const [senha, setSenha] = useState("");
     const [confirmarSenha, setConfirmarSenha] = useState("");
+    const [foto, setFoto] = useState("");
+    const [fotoPreview, setFotoPreview] = useState("");
+    const handleFotoChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validar tipo de arquivo
+        if (!file.type.startsWith('image/')) {
+            toast.error('Por favor, selecione uma imagem válida');
+            return;
+        }
+
+        // Validar tamanho (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('A imagem deve ter no máximo 5MB');
+            return;
+        }
+
+        // Criar preview local
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setFotoPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+        
+        // Armazenar o File objeto (não base64)
+        setFoto(file);
+    };
+
+    const handleRemoverFoto = () => {
+        setFotoPreview('');
+        setFoto('');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!nome || !email || !telefone || !senha) {
@@ -32,6 +72,7 @@ export default function Cadastro() {
             dataNascimento: dataNascimento || new Date().toISOString().split('T')[0],
             sexo,
             senha,
+            foto,
             salaoId: CONSTS.salaoId,
         };
         const result = await dispatch(cadastrarCliente(dadosCliente));
@@ -49,9 +90,61 @@ export default function Cadastro() {
 
             <div className="absolute inset-0 flex items-center justify-center px-4">
                 <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-10 w-full max-w-md min-h-[580px] flex flex-col justify-center">
-                    <h2 className="text-3xl font-semibold text-center mb-8 text-gray-800">
+                    <h2 className="text-3xl font-semibold text-center mb-6 text-gray-800">
                         Criar conta
                     </h2>
+
+                    {/* Upload de Foto */}
+                    <div className="flex justify-center mb-6">
+                        <div className="relative group">
+                            <div className="h-24 w-24 rounded-full border-4 border-gray-200 overflow-hidden 
+                                bg-gray-100 flex items-center justify-center shadow-md">
+                                {fotoPreview ? (
+                                    <img 
+                                        src={fotoPreview} 
+                                        alt="Preview" 
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    <Camera size={40} weight="duotone" className="text-gray-400" />
+                                )}
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 
+                                backdrop-blur-[2px] rounded-full opacity-0 group-hover:opacity-100 
+                                transition-opacity duration-200">
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="p-2 bg-yellow-500 hover:bg-yellow-600 rounded-lg 
+                                        transition-colors shadow-lg"
+                                    aria-label="Adicionar foto"
+                                    title="Adicionar foto"
+                                >
+                                    <Camera size={20} weight="duotone" className="text-white" />
+                                </button>
+                                {fotoPreview && (
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoverFoto}
+                                        className="ml-2 p-2 bg-red-500 hover:bg-red-600 rounded-lg 
+                                            transition-colors shadow-lg"
+                                        aria-label="Remover foto"
+                                        title="Remover foto"
+                                    >
+                                        <X size={20} weight="bold" className="text-white" />
+                                    </button>
+                                )}
+                            </div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFotoChange}
+                                className="hidden"
+                                aria-label="Selecionar foto de perfil"
+                            />
+                        </div>
+                    </div>
 
                     <form className="space-y-5" onSubmit={handleSubmit}>
                         <div className="relative">
