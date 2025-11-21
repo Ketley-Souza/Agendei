@@ -26,16 +26,13 @@ const HomeCliente = () => {
   const [servicos, setServicos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ------------------ FUNÇÃO PARA PEGAR IMAGEM DO BANCO ------------------
   const getFoto = (servico) => {
     const img = servico?.imagem || servico?.foto;
 
     if (!img) return "/placeholder.png";
 
-    // se já for URL completa (startsWith http)
     if (img.startsWith("http")) return img;
 
-    // caso venha sem a barra inicial, corrige e adiciona prefixo da API
     return `${apiUrl}/${img.replace(/^\/+/, "")}`;
   };
 
@@ -92,21 +89,28 @@ const HomeCliente = () => {
 
       <div className="bg-white rounded-2xl pb-10 w-full max-w-3xl font-catamaran overflow-hidden">
 
-        {/* -------- BANNER + LOGO -------- */}
-        <div className="relative w-full h-64 sm:h-72">
+        {/* -------- BANNER + LOGO + TEXTO -------- */}
+        <div className="relative w-full h-64 sm:h-72 flex flex-col items-center justify-center">
+
           <img
             src="/salao-login.jpg"
             alt="Salão"
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover brightness-95"
           />
 
-          {/* LOGO CENTRALIZADA */}
+          {/* LOGO */}
           <img
             src="/logo.png"
             alt="Logo"
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-            w-40 sm:w-52 md:w-60 object-contain drop-shadow-2xl"
+            className="relative z-10 w-40 sm:w-52 md:w-60 object-contain drop-shadow-2xl"
           />
+
+          {/* TEXTO DO SALÃO */}
+          <p
+            className="relative z-10 mt-2 text-lg sm:text-xl text-white font-semibold tracking-wide drop-shadow-[0_2px_3px_rgba(0,0,0,0.6)]"
+          >
+            Studio de Beleza Nosso Espaço
+          </p>
         </div>
 
         {/* -------- BOTÕES RÁPIDOS -------- */}
