@@ -17,7 +17,7 @@ import {
   limparServicoSelecionado,
 } from "../../../store/slices/agendamentoSlice";
 
-const { salaoId } = CONSTS;
+const { salaoId, apiUrl } = CONSTS;
 
 const HomeCliente = () => {
   const navigate = useNavigate();
@@ -25,6 +25,19 @@ const HomeCliente = () => {
   const clienteId = useSelector((state) => state.auth.usuario?.id);
   const [servicos, setServicos] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // ------------------ FUNÇÃO PARA PEGAR IMAGEM DO BANCO ------------------
+  const getFoto = (servico) => {
+    const img = servico?.imagem || servico?.foto;
+
+    if (!img) return "/placeholder.png";
+
+    // se já for URL completa (startsWith http)
+    if (img.startsWith("http")) return img;
+
+    // caso venha sem a barra inicial, corrige e adiciona prefixo da API
+    return `${apiUrl}/${img.replace(/^\/+/, "")}`;
+  };
 
   useEffect(() => {
     const carregarServicos = async () => {
@@ -59,7 +72,6 @@ const HomeCliente = () => {
     navigate("/agendamento");
   };
 
-  // 📌 Função para compartilhar o link da página
   const compartilharPagina = async () => {
     const link = window.location.href;
 
@@ -78,22 +90,28 @@ const HomeCliente = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center px-2 sm:px-4 pt-5 pb-10">
 
-      {/* container sem borda, mantendo alinhamento */}
       <div className="bg-white rounded-2xl pb-10 w-full max-w-3xl font-catamaran overflow-hidden">
 
-        {/* Banner sem selo 'Aberto' */}
-        <div className="relative w-full h-56">
+        {/* -------- BANNER + LOGO -------- */}
+        <div className="relative w-full h-64 sm:h-72">
           <img
             src="/salao-login.jpg"
             alt="Salão"
             className="w-full h-full object-cover"
           />
+
+          {/* LOGO CENTRALIZADA */}
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+            w-40 sm:w-52 md:w-60 object-contain drop-shadow-2xl"
+          />
         </div>
 
-        {/* Botões rápidos */}
+        {/* -------- BOTÕES RÁPIDOS -------- */}
         <div className="grid grid-cols-4 gap-2 bg-white py-4 px-5">
 
-          {/* WhatsApp */}
           <a
             href={`https://wa.me/5534992338445?text=${encodeURIComponent("Olá! Gostaria de agendar um horário 😊")}`}
             target="_blank"
@@ -106,7 +124,6 @@ const HomeCliente = () => {
             <p className="text-xs mt-1">Mensagem</p>
           </a>
 
-          {/* Ligar */}
           <a href="tel:+5534992338445" className="flex flex-col items-center text-gray-700">
             <div className="w-14 h-14 bg-yellow-50 rounded-xl flex items-center justify-center">
               <Phone size={24} />
@@ -114,7 +131,6 @@ const HomeCliente = () => {
             <p className="text-xs mt-1">Ligar</p>
           </a>
 
-          {/* Maps */}
           <a
             href="https://www.google.com/maps?q=Av.+Patr%C3%ADcio+Filho,+05+-+Jardim+Esperanca,+Patos+de+Minas+-+MG,+38703-698"
             target="_blank"
@@ -127,7 +143,6 @@ const HomeCliente = () => {
             <p className="text-xs mt-1">Visitar</p>
           </a>
 
-          {/* Compartilhar com link */}
           <button onClick={compartilharPagina} className="flex flex-col items-center text-gray-700">
             <div className="w-14 h-14 bg-yellow-50 rounded-xl flex items-center justify-center">
               <ShareNetwork size={24} />
@@ -136,7 +151,7 @@ const HomeCliente = () => {
           </button>
         </div>
 
-        {/* Botão agendar */}
+        {/* -------- BOTÃO AGENDAR -------- */}
         <div className="px-5 mt-6">
           <button
             onClick={() => irParaAgendamento()}
@@ -147,7 +162,7 @@ const HomeCliente = () => {
           </button>
         </div>
 
-        {/* Lista serviços */}
+        {/* -------- LISTA DE SERVIÇOS -------- */}
         <div className="px-5 mt-6">
           <h2 className="text-xl font-semibold mb-4">
             Serviços em Destaque
@@ -163,9 +178,9 @@ const HomeCliente = () => {
             >
               <div className="flex items-center gap-4">
                 <img
-                  src={servico.foto || "/placeholder.png"}
+                  src={getFoto(servico)}
                   alt={servico.nomeServico}
-                  className="w-16 h-16 rounded-xl object-cover"
+                  className="w-20 h-20 rounded-xl object-cover border border-gray-200"
                 />
 
                 <div>
