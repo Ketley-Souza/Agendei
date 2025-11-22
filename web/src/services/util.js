@@ -12,10 +12,7 @@ const util = {
 
     diasSemana: ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"],
 
-    baseURL:
-        process.env.NODE_ENV === "production"
-            ? "https://ws.salaonamao.com.br:8000"
-            : "http://localhost:8000",
+    baseURL: process.env.NODE_ENV === "production" ? "/api" : "http://localhost:8000",
 
     // -----------------------------
     // CORES

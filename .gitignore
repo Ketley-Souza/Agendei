@@ -21,12 +21,7 @@
 
 # Misc
 .DS_Store
-#apagar
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+
 
 # Logs
 npm-debug.log*
