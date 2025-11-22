@@ -4,5 +4,13 @@
   "installCommand": "yarn install --cwd web && yarn install --cwd ws",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api" }
+  ],
+  "headers": [
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
   ]
 }
