@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { fazerLogin } from "../../../store/slices/authSlice";
-import InputFloatingLabel from "../../../components/InputFloatingLabel";
 import { Link } from "react-router-dom";
+import { CaretLeft } from "@phosphor-icons/react";
 
 export default function Login() {
     const dispatch = useDispatch();
@@ -36,6 +36,15 @@ export default function Login() {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             <div className="absolute inset-0 flex items-center justify-center px-4">
                 <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-10 w-full max-w-md min-h-[480px] flex flex-col justify-center">
+                    {/* Botão voltar */}
+                    <button
+                        type="button"
+                        onClick={() => navigate("/")}
+                        className="absolute left-10 top-12 p-2 rounded-full hover:bg-gray-200 transition-colors"
+                        aria-label="Voltar para a Home"
+                    >
+                        <CaretLeft size={20} weight="bold" />
+                    </button>
                     <h2 className="text-3xl font-semibold text-center mb-8 text-gray-800">
                         Faça login
                     </h2>

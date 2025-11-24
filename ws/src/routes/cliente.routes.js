@@ -4,6 +4,10 @@ const mongoose = require('mongoose');
 const Cliente = require('../models/cliente');
 const StatusCliente = require('../models/relations/statusCliente');
 
+const multer = require('multer');
+const { clienteStorage } = require('../config/cloudinary');
+const upload = multer({ storage: clienteStorage });
+
 router.post('/', async (req, res) => {
     const db = mongoose.connection;
     const session = await db.startSession();
@@ -12,10 +16,10 @@ router.post('/', async (req, res) => {
     try {
         let cliente;
         let salaoId;
-        
+
         if (req.body.cliente) {
-            cliente = typeof req.body.cliente === 'string' 
-                ? JSON.parse(req.body.cliente) 
+            cliente = typeof req.body.cliente === 'string'
+                ? JSON.parse(req.body.cliente)
                 : req.body.cliente;
             salaoId = req.body.salaoId;
         } else {
@@ -23,7 +27,7 @@ router.post('/', async (req, res) => {
             cliente = clienteData;
             salaoId = id;
         }
-        
+
         let newClient = null;
 
         const existentClient = await Cliente.findOne({
@@ -135,5 +139,61 @@ router.delete('/vinculo/:id', async (req, res) => {
         res.json({ error: true, message: err.message });
     }
 });
+
+// Rota para atualizar dados do cliente
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: true, message: 'ID inválido' });
+        }
+
+        const { nome, email, telefone, sexo, dataNascimento, foto } = req.body;
+
+        const clienteAtualizado = await Cliente.findByIdAndUpdate(
+            id,
+            {
+                nome,
+                email,
+                telefone,
+                sexo,
+                dataNascimento,
+                foto,
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!clienteAtualizado) {
+            return res.status(404).json({ error: true, message: 'Cliente não encontrado' });
+        }
+
+        res.json({
+            error: false,
+            message: 'Cliente atualizado com sucesso!',
+            cliente: clienteAtualizado
+        });
+    } catch (err) {
+        res.json({ error: true, message: err.message });
+    }
+});
+
+// Rota para upload de foto do cliente
+router.post('/upload-foto', upload.single('foto'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: true, message: 'Nenhuma foto foi enviada' });
+        }
+
+        res.json({
+            error: false,
+            message: 'Foto enviada com sucesso!',
+            fotoUrl: req.file.path
+        });
+    } catch (err) {
+        res.json({ error: true, message: err.message });
+    }
+});
+
 
 module.exports = router;
