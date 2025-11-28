@@ -31,7 +31,7 @@ router.post('/filter', async (req, res) => {
         const agendamentos = await Agendamento.find(query).populate([
             { path: 'servicoId', select: 'nomeServico duracao preco' },
             { path: 'servicosAdicionais', select: 'nomeServico duracao preco' },
-            { path: 'colaboradorId', select: 'nome' },
+            { path: 'colaboradorId', select: 'nome foto' },
             { path: 'clienteId', select: 'nome' },
         ]);
 

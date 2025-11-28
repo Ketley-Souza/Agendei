@@ -126,6 +126,7 @@ select.rs-input:focus-visible {
   font-family: "Catamaran", sans-serif !important;
 }
 
+
 .rbc-event-content {
   font-size: 15px !important;
   color: #ffffff !important;  /* <<< mantém contraste ideal */
